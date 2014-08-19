@@ -13,7 +13,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # need a private network for NFS shares to work
   config.vm.network "private_network", ip: "192.168.50.4"
 
-  config.vm.box = "precise64"
+  config.vm.box = "https://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box"
 
   config.vm.synced_folder ".", "/vagrant", type: "nfs"
 
