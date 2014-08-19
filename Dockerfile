@@ -33,4 +33,4 @@ RUN cd /home/liquidsoap/liquidsoap-full; sudo make install
 USER icecast2
 
 EXPOSE 8000
-CMD ["exec", "icecast2", "-c", "/etc/icecast2/icecast.xml"]
+CMD icecast2 -c /etc/icecast2/icecast.xml
