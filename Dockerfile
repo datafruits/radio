@@ -7,7 +7,7 @@ ENV LANG en_US.UTF-8
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update
+RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y --force-yes build-essential autoconf curl git ocaml \
   libmad0-dev libtag1-dev libmp3lame-dev libogg-dev libvorbis-dev libpcre-ocaml-dev \
   libcamomile-ocaml-dev pkg-config
@@ -30,7 +30,9 @@ RUN cd /home/liquidsoap/liquidsoap-full; ./configure;
 RUN cd /home/liquidsoap/liquidsoap-full; make;
 RUN cd /home/liquidsoap/liquidsoap-full; sudo make install
 
+ADD radio.liq /radio.liq
+
 USER icecast2
 
 EXPOSE 8000
-CMD icecast2 -c /etc/icecast2/icecast.xml
+CMD icecast2 -b -c /etc/icecast2/icecast.xml; liquidsoap /radio.liq
