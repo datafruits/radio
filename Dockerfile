@@ -32,8 +32,9 @@ RUN cd /home/liquidsoap/liquidsoap-full; sudo make install
 
 ADD radio.liq /radio.liq
 ADD icecast.xml /etc/icecast2/icecast.xml
+ADD start /start.sh
 
 USER icecast2
 
 EXPOSE 8000
-CMD icecast2 -b -c /etc/icecast2/icecast.xml; liquidsoap /radio.liq
+CMD /start.sh
