@@ -21,6 +21,13 @@ RUN useradd --create-home -s /bin/bash liquidsoap ;\
 RUN echo "Defaults    !requiretty" >> /etc/sudoers
 RUN echo "%sudo ALL=NOPASSWD: ALL" >> /etc/sudoers
 
+ADD radio.liq /radio.liq
+ADD start.sh /start.sh
+ADD icecast.xml /icecast.xml
+
+RUN chown icecast2:users /icecast.xml
+RUN chown icecast2:users /radio.liq
+
 # install liquidsoap from source
 USER liquidsoap
 RUN cd /home/liquidsoap; git clone https://github.com/savonet/liquidsoap-full
@@ -29,10 +36,6 @@ RUN cd /home/liquidsoap/liquidsoap-full; ./bootstrap;
 RUN cd /home/liquidsoap/liquidsoap-full; ./configure;
 RUN cd /home/liquidsoap/liquidsoap-full; make;
 RUN cd /home/liquidsoap/liquidsoap-full; sudo make install
-
-ADD radio.liq /radio.liq
-ADD icecast.xml /etc/icecast2/icecast.xml
-ADD start.sh /start.sh
 
 USER icecast2
 
