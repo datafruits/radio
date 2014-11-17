@@ -1,4 +1,4 @@
 #!/bin/bash
 
-icecast2 -b -c /etc/icecast2/icecast.xml
+icecast2 -b -c /icecast.xml
 liquidsoap /radio.liq

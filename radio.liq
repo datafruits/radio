@@ -6,8 +6,6 @@ set("log.stdout",true)
 set("log.level",3)
 
 set("harbor.bind_addr","0.0.0.0")
-live_dj = input.harbor("live",port=9000)
-
 # needs these env variables
 radio_name = getenv("RADIO_NAME")
 
