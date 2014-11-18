@@ -24,6 +24,7 @@ RUN echo "%sudo ALL=NOPASSWD: ALL" >> /etc/sudoers
 ADD radio.liq /radio.liq
 ADD start.sh /start.sh
 ADD icecast.xml /icecast.xml
+ADD emergency_broadcast.wav /emergency_broadcast.wav
 
 RUN chown icecast2:users /icecast.xml
 RUN chown icecast2:users /radio.liq
