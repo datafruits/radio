@@ -28,6 +28,8 @@ ADD emergency_broadcast.wav /emergency_broadcast.wav
 
 RUN chown icecast2:users /icecast.xml
 RUN chown icecast2:users /radio.liq
+RUN touch /var/log/liquidsoap.log
+RUN chown icecast2:users /var/log/liquidsoap.log
 
 # install liquidsoap from source
 USER liquidsoap

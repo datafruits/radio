@@ -1,7 +1,7 @@
 #!/usr/local/bin/liquidsoap
 
 set("log.file",true)
-set("log.file.path","./liquidsoap.log")
+set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
 set("log.level",3)
 
