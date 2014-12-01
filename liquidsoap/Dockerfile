@@ -39,7 +39,6 @@ RUN echo "%sudo ALL=NOPASSWD: ALL" >> /etc/sudoers
 RUN echo 'eval "$(rbenv init -)"' >> /home/liquidsoap/.bashrc
 RUN echo 'gem: --no-rdoc --no-ri' >> /home/liquidsoap/.gemrc
 
-# RUN chown liquidsoap:users /radio.liq
 RUN touch /var/log/liquidsoap.log
 RUN chown liquidsoap:users /var/log/liquidsoap.log
 
@@ -62,4 +61,4 @@ WORKDIR /home/liquidsoap/radio
 RUN rbenv exec bundle install
 
 EXPOSE 8000
-CMD liquidsoap -c radio.liq
+CMD liquidsoap radio.liq

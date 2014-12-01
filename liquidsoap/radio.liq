@@ -71,7 +71,7 @@ def new_meta(m) =
 end
 
 live_dj = map_metadata(new_meta, live_dj,update=false)
-on_fail = single("/emergency_broadcast.wav")
+on_fail = single("./emergency_broadcast.wav")
 
 source = fallback(track_sensitive=false,
                   [live_dj,backup_playlist,on_fail])
