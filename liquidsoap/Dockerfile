@@ -8,13 +8,12 @@ ENV LANG en_US.UTF-8
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get upgrade -y
-# for liquidsoap/icecast
+# for liquidsoap
 RUN apt-get install -y --force-yes build-essential autoconf curl git ocaml \
   libmad0-dev libtag1-dev libmp3lame-dev libogg-dev libvorbis-dev libpcre-ocaml-dev \
   libcamomile-ocaml-dev pkg-config
 # for ruby
 RUN apt-get install -y --force-yes libssl-dev
-RUN apt-get install -y icecast2
 
 RUN apt-get clean
 
@@ -40,16 +39,9 @@ RUN echo "%sudo ALL=NOPASSWD: ALL" >> /etc/sudoers
 RUN echo 'eval "$(rbenv init -)"' >> /home/liquidsoap/.bashrc
 RUN echo 'gem: --no-rdoc --no-ri' >> /home/liquidsoap/.gemrc
 
-ADD radio.liq /radio.liq
-ADD start.sh /start.sh
-ADD icecast.xml /icecast.xml
-ADD emergency_broadcast.wav /emergency_broadcast.wav
-
-RUN chown icecast2:users /icecast.xml
-RUN chown liquidsoap:users /radio.liq
+# RUN chown liquidsoap:users /radio.liq
 RUN touch /var/log/liquidsoap.log
 RUN chown liquidsoap:users /var/log/liquidsoap.log
-RUN adduser icecast2 sudo
 
 # install liquidsoap from source
 USER liquidsoap
@@ -60,7 +52,14 @@ RUN cd /home/liquidsoap/liquidsoap-full; ./configure;
 RUN cd /home/liquidsoap/liquidsoap-full; make;
 RUN cd /home/liquidsoap/liquidsoap-full; sudo make install
 
-USER root
+RUN mkdir /home/liquidsoap/radio
+ADD radio.liq /home/liquidsoap/radio/radio.liq
+ADD emergency_broadcast.wav /home/liquidsoap/radio/emergency_broadcast.wav
+ADD Gemfile /home/liquidsoap/radio/Gemfile
+ADD dj_auth.rb /home/liquidsoap/radio/dj_auth.rb
+
+WORKDIR /home/liquidsoap/radio
+RUN rbenv exec bundle install
 
 EXPOSE 8000
-CMD /start.sh
+CMD liquidsoap -c radio.liq
