@@ -1,8 +1,14 @@
 #!/usr/bin/env ruby
-
 Bundler.require
+require_relative './playlist_download_job'
 
-require 'httparty'
+R = Redis.new
 
-resp = HTTParty.get("http://#{radio_name}.streampusher.io/playlists/next.json")
-resp["track"]
+next_song = R.lpop "#{ENV['RADIO_NAME']}:playlist"
+if next_song != nil
+  puts next_song
+else
+  puts "enqueueing PlaylistDownload..."
+  PlaylistDownload.perform_async
+  nil
+end
