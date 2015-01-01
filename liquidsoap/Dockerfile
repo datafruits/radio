@@ -60,5 +60,5 @@ ADD dj_auth.rb /home/liquidsoap/radio/dj_auth.rb
 WORKDIR /home/liquidsoap/radio
 RUN rbenv exec bundle install
 
-EXPOSE 8000
+EXPOSE 9000
 CMD liquidsoap radio.liq
