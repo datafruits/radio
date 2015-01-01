@@ -8,6 +8,8 @@ set("log.level",3)
 set("harbor.bind_addr","0.0.0.0")
 # needs these env variables
 radio_name = getenv("RADIO_NAME")
+icecast_host = getenv("ICECAST_PORT_8000_TCP_ADDR")
+icecast_port = getenv("ICECAST_PORT_8000_TCP_PORT")
 
 # refs
 title_prefix = ref ""
@@ -78,13 +80,13 @@ source = fallback(track_sensitive=false,
 
 output.icecast(%vorbis,id="icecast",
                mount="#{radio_name}.ogg",
-               host="localhost", password="hackme",
+               host=icecast_host, port=icecast_port, password="hackme",
                icy_metadata="true",description="",
                url="",
                source)
 output.icecast(%mp3,id="icecast",
                mount="#{radio_name}.mp3",
-               host="localhost", password="hackme",
+               host=icecast_host, port=icecast_port, password="hackme",
                icy_metadata="true",description="",
                url="",
                source)
