@@ -80,13 +80,13 @@ source = fallback(track_sensitive=false,
 
 output.icecast(%vorbis,id="icecast",
                mount="#{radio_name}.ogg",
-               host=icecast_host, port=icecast_port, password="hackme",
+               host=icecast_host, port=int_of_string(icecast_port), password="hackme",
                icy_metadata="true",description="",
                url="",
                source)
 output.icecast(%mp3,id="icecast",
                mount="#{radio_name}.mp3",
-               host=icecast_host, port=icecast_port, password="hackme",
+               host=icecast_host, port=int_of_string(icecast_port), password="hackme",
                icy_metadata="true",description="",
                url="",
                source)
