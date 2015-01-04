@@ -14,12 +14,6 @@ icecast_port = getenv("ICECAST_PORT_8000_TCP_PORT")
 # refs
 title_prefix = ref ""
 
-def my_request_function () =
-  result = get_process_lines("bundle exec ./next_song.rb")
-  log("next song: #{result}")
-  request.create(list.hd(result))
-end
-
 def get_user(user,password) =
   if user == "source" then
     x = string.split(separator=';',password)
@@ -43,7 +37,7 @@ def dj_auth(user,password) =
   u = get_user(user,password)
   p = get_password(user,password)
   #get the output of the php script
-  ret = get_process_lines("bundle exec ./dj_auth.rb #{u} #{p} #{radio_name}")
+  ret = get_process_lines("rbenv exec bundle exec ruby ./dj_auth.rb #{u} #{p} #{radio_name}")
   #ret has now the value of the live client (dj1,dj2, or djx), or "ERROR"/"unknown"
   ret = list.hd(ret)
   #return true to let the client transmit data, or false to tell harbor to decline
@@ -59,7 +53,7 @@ def on_disconnect() =
   title_prefix := ""
 end
 
-backup_playlist = request.dynamic(my_request_function)
+backup_playlist = playlist("http://#{radio_name}.streampusher.io/playlist.txt",conservative=true,mode=normal,reload_mode="watch")
 output.dummy(fallible=true,backup_playlist)
 live_dj = input.harbor("#{radio_name}",port=9000,auth=dj_auth,on_disconnect=on_disconnect)
 

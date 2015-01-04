@@ -56,6 +56,7 @@ ADD radio.liq /home/liquidsoap/radio/radio.liq
 ADD emergency_broadcast.wav /home/liquidsoap/radio/emergency_broadcast.wav
 ADD Gemfile /home/liquidsoap/radio/Gemfile
 ADD dj_auth.rb /home/liquidsoap/radio/dj_auth.rb
+ADD next_song.rb /home/liquidsoap/radio/next_song.rb
 
 WORKDIR /home/liquidsoap/radio
 RUN rbenv exec bundle install
