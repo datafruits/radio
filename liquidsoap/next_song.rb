@@ -2,13 +2,10 @@
 Bundler.require
 require_relative './playlist_download_job'
 
-R = Redis.new
+redis = Redis.new host: ENV['REDIS_PORT_6379_TCP_ADDR'], port: ENV['REDIS_PORT_6379_TCP_PORT']
 
-next_song = R.lpop "#{ENV['RADIO_NAME']}:playlist"
-if next_song != nil
-  puts next_song
-else
-  puts "enqueueing PlaylistDownload..."
-  PlaylistDownload.perform_async
-  nil
-end
+key = "#{ENV['RADIO_NAME']}:playlist"
+
+song = redis.rpoplpush key, key
+
+puts song

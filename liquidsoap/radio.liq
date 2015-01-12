@@ -53,7 +53,14 @@ def on_disconnect() =
   title_prefix := ""
 end
 
-backup_playlist = playlist("http://#{radio_name}.streampusher.io/playlist.txt",conservative=true,mode=normal,reload_mode="watch")
+def my_request_function () =
+  result = get_process_lines("rbenv exec bundle exec ./next_song.rb")
+  log("next song: #{result}")
+  request.create(list.hd(result))
+end
+
+# backup_playlist = playlist("http://#{radio_name}.streampusher.io/playlist.txt",conservative=true,mode=normal,reload_mode="watch")
+backup_playlist = request.dynamic(my_request_function)
 output.dummy(fallible=true,backup_playlist)
 live_dj = input.harbor("#{radio_name}",port=9000,auth=dj_auth,on_disconnect=on_disconnect)
 
