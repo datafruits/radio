@@ -54,7 +54,7 @@ def on_disconnect() =
 end
 
 def my_request_function () =
-  result = get_process_lines("rbenv exec bundle exec ./next_song.rb")
+  result = get_process_lines("rbenv exec bundle exec ruby ./next_song.rb")
   log("next song: #{result}")
   request.create(list.hd(result))
 end
