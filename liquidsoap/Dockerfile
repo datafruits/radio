@@ -11,7 +11,8 @@ RUN apt-get update && apt-get upgrade -y
 # for liquidsoap
 RUN apt-get install -y --force-yes build-essential autoconf curl git ocaml \
   libmad0-dev libtag1-dev libmp3lame-dev libogg-dev libvorbis-dev libpcre-ocaml-dev \
-  libcamomile-ocaml-dev pkg-config
+  libcamomile-ocaml-dev pkg-config \
+  wget
 # for ruby
 RUN apt-get install -y --force-yes libssl-dev
 
