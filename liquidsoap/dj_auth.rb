@@ -14,6 +14,7 @@ if ENV['RAILS_ENV'] == 'development'
   host = '192.168.1.4'
 else
   host = "#{ENV['RADIO_NAME']}.streampusher.com"
+end
 
 resp = HTTParty.post("http://#{host}/login.json", opts)
 if resp["success"] == true
