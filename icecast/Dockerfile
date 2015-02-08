@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:15.04
 
 # locale
 RUN locale-gen ja_JP.UTF-8 && \
