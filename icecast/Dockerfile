@@ -18,6 +18,11 @@ RUN cd icecast-2.4.1; ./configure && make && make install
 ADD icecast.xml /icecast.xml
 RUN useradd --create-home -s /bin/bash icecast
 RUN chown icecast:users /icecast.xml
+RUN mkdir -p /usr/local/var/log/icecast/
+RUN touch /usr/local/var/log/icecast/access.log
+RUN chown icecast:users /usr/local/var/log/icecast/access.log
+RUN touch /usr/local/var/log/icecast/error.log
+RUN chown icecast:users /usr/local/var/log/icecast/error.log
 
 USER icecast
 
