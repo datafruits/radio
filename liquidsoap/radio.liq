@@ -5,6 +5,10 @@ set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
 set("log.level",3)
 
+set("server.telnet",true)
+set("server.socket",true)
+set("server.socket.path","/tmp/liquidsoap.sock")
+
 set("harbor.bind_addr","0.0.0.0")
 # needs these env variables
 radio_name = getenv("RADIO_NAME")
