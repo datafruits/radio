@@ -7,4 +7,4 @@ key = "#{ENV['RADIO_NAME']}:playlist"
 
 song = redis.rpoplpush key, key
 
-puts song
+puts "/home/liquidsoap/tracks/#{song}"
