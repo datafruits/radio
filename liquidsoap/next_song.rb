@@ -5,7 +5,7 @@ redis = Redis.new host: ENV['REDIS_PORT_6379_TCP_ADDR'], port: ENV['REDIS_PORT_6
 
 key = "#{ENV['RADIO_NAME']}:playlist"
 
-song = redis.blpop key
-redis.rpush key, song
+song = redis.rpop key
+redis.lpush key, song
 
 puts "/home/liquidsoap/tracks/#{song}"
