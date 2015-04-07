@@ -12,7 +12,9 @@ opts = { body: { :user => {"login" => username, "password" => password} } }
 
 if ENV['RAILS_ENV'] == 'development'
   # TODO find a better way to get the docker host
-  host = '192.168.1.4:3000'
+  host = 'docker:3000'
+  puts true
+  exit(0)
 else
   host = "#{ENV['RADIO_NAME']}.streampusher.com"
 end
