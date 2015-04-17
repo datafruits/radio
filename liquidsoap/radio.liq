@@ -83,6 +83,10 @@ on_fail = single("./emergency_broadcast.wav")
 source = fallback(track_sensitive=false,
                   [live_dj,backup_playlist,on_fail])
 
+title = '$(if $(title),"$(title)",\
+         "Emission inconnue")$(if $(artist), \
+         " par  $(artist)") - %m-%d-%Y, %H:%M:%S'
+output.file(%mp3, "/home/liquidsoap/#{radio_name}-#{title}.mp3", live_dj, fallible=true, reopen_on_metadata=true)
 output.icecast(%vorbis,id="icecast",
                mount="#{radio_name}.ogg",
                host=icecast_host, port=int_of_string(icecast_port), password="hackme",
