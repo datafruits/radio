@@ -6,7 +6,7 @@ redis = Redis.new host: ENV['REDIS_PORT_6379_TCP_ADDR'], port: ENV['REDIS_PORT_6
 
 key = "#{ENV['RADIO_NAME']}:playlist"
 
-schedule_key = get_key_for_current_time Time.now.utc
+schedule_key = TimeParser.get_key_for_current_time Time.now.utc
 playlist_key = redis.get schedule_key
 
 song = redis.rpop playlist_key
