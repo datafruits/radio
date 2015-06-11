@@ -66,7 +66,7 @@ end
 # backup_playlist = playlist("http://#{radio_name}.streampusher.io/playlist.txt",conservative=true,mode=normal,reload_mode="watch")
 backup_playlist = request.dynamic(my_request_function)
 output.dummy(fallible=true,backup_playlist)
-live_dj = input.harbor("#{radio_name}",port=9000,auth=dj_auth,on_disconnect=on_disconnect)
+live_dj = audio_to_stereo(input.harbor("#{radio_name}",port=9000,auth=dj_auth,on_disconnect=on_disconnect))
 
 def new_meta(m) =
   if "#{title_prefix}" == "" then
