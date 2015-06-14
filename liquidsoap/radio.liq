@@ -81,21 +81,21 @@ live_dj = map_metadata(new_meta, live_dj,update=false)
 on_fail = single("./emergency_broadcast.wav")
 
 source = fallback(track_sensitive=false,
-                  [live_dj,backup_playlist,on_fail])
+                  [clock(live_dj),backup_playlist,on_fail])
 
 title = '$(if $(title),"$(title)",\
          "Emission inconnue")$(if $(artist), \
          " par  $(artist)") - %m-%d-%Y, %H:%M:%S'
 output.file(%mp3, "/home/liquidsoap/#{radio_name}-#{title}.mp3", live_dj, fallible=true, reopen_on_metadata=true)
-output.icecast(%vorbis,id="icecast",
-               mount="#{radio_name}.ogg",
-               host=icecast_host, port=int_of_string(icecast_port), password="hackme",
-               icy_metadata="true",description="",
-               url="",
-               source)
-output.icecast(%mp3,id="icecast",
-               mount="#{radio_name}.mp3",
-               host=icecast_host, port=int_of_string(icecast_port), password="hackme",
-               icy_metadata="true",description="",
-               url="",
-               source)
+clock.assign_new(id="vorbis_icecast", [output.icecast(%vorbis,id="icecast",
+                                       mount="#{radio_name}.ogg",
+                                       host=icecast_host, port=int_of_string(icecast_port), password="hackme",
+                                       icy_metadata="true",description="",
+                                       url="",
+                                       mksafe(buffer(source)))])
+clock.assign_new(id="mp3_icecast", [output.icecast(%mp3,id="icecast",
+                                    mount="#{radio_name}.mp3",
+                                    host=icecast_host, port=int_of_string(icecast_port), password="hackme",
+                                    icy_metadata="true",description="",
+                                    url="",
+                                    mksafe(buffer(source)))])
