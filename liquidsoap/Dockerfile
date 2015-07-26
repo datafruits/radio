@@ -8,13 +8,17 @@ ENV LANG en_US.UTF-8
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get upgrade -y
+RUN apt-get install -y software-properties-common
+RUN add-apt-repository ppa:avsm/ppa
+RUN apt-get update && apt-get upgrade -y
+
 # for liquidsoap
-RUN apt-get install -y --force-yes build-essential autoconf curl git ocaml \
-  libmad0-dev libtag1-dev libmp3lame-dev libogg-dev libvorbis-dev libpcre-ocaml-dev \
-  libcamomile-ocaml-dev pkg-config \
+RUN apt-get install -y --force-yes build-essential autoconf curl git ocaml ocaml-native-compilers camlp4-extra opam \
+  libmad0-dev libtag1-dev libmp3lame-dev libogg-dev libvorbis-dev \
+  pkg-config \
   wget
 # for ruby
-RUN apt-get install -y --force-yes libssl-dev
+RUN apt-get install -y --force-yes libssl-dev libreadline-dev
 
 RUN apt-get clean
 
@@ -38,19 +42,26 @@ RUN useradd --create-home -s /bin/bash liquidsoap ;\
 RUN echo "Defaults    !requiretty" >> /etc/sudoers
 RUN echo "%sudo ALL=NOPASSWD: ALL" >> /etc/sudoers
 RUN echo 'eval "$(rbenv init -)"' >> /home/liquidsoap/.bashrc
+#RUN echo '. /home/liquidsoap/.opam/opam-init/init.sh > /dev/null 2> /dev/null || true' >> /home/liquidsoap/.bashrc
+RUN echo 'eval "$(opam config env)"' >> /home/liquidsoap/.bashrc
 RUN echo 'gem: --no-rdoc --no-ri' >> /home/liquidsoap/.gemrc
 
 RUN touch /var/log/liquidsoap.log
 RUN chown liquidsoap:users /var/log/liquidsoap.log
 
+RUN apt-get install -y libpcre3-dev
+
 # install liquidsoap from source
 USER liquidsoap
+RUN cd ~; opam init -y
+RUN cd ~; opam install -y base-bytes pcre camomile
 RUN cd /home/liquidsoap; git clone https://github.com/savonet/liquidsoap-full
 ADD PACKAGES /home/liquidsoap/liquidsoap-full/PACKAGES
-RUN cd /home/liquidsoap/liquidsoap-full; ./bootstrap;
-RUN cd /home/liquidsoap/liquidsoap-full; ./configure;
-RUN cd /home/liquidsoap/liquidsoap-full; make;
-RUN cd /home/liquidsoap/liquidsoap-full; sudo make install
+RUN ["/bin/bash", "-c", "ls -lha ~"]
+RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; ./bootstrap;"]
+RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; eval `opam config env`; ./configure;"]
+RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; eval `opam config env`; make;"]
+RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; eval `opam config env`; sudo make install"]
 
 RUN mkdir /home/liquidsoap/radio
 ADD ./ /home/liquidsoap/radio/
