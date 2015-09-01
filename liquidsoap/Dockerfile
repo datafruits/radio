@@ -19,6 +19,8 @@ RUN apt-get install -y --force-yes build-essential autoconf curl git ocaml ocaml
   wget
 # for ruby
 RUN apt-get install -y --force-yes libssl-dev libreadline-dev
+# sox
+RUN apt-get install -y --force-yes sox libsox-fmt-mp3
 
 RUN apt-get clean
 
