@@ -18,6 +18,11 @@ icecast_port = getenv("ICECAST_PORT_8000_TCP_PORT")
 # refs
 title_prefix = ref ""
 
+def save_recording(filename) =
+  result = get_process_lines("rbenv exec bundle exec ruby ./save_recording.rb #{filename} #{radio_name}")
+  log("save_recording: #{result}")
+end
+
 def get_user(user,password) =
   if user == "source" then
     x = string.split(separator=';',password)
@@ -86,7 +91,7 @@ source = fallback(track_sensitive=false,
 title = '$(if $(title),"$(title)",\
          "Emission inconnue")$(if $(artist), \
          " par  $(artist)") - %m-%d-%Y, %H:%M:%S'
-output.file(%mp3, "/home/liquidsoap/#{radio_name}-#{title}.mp3", live_dj, fallible=true, reopen_on_metadata=true)
+output.file(%mp3, "/home/liquidsoap/#{radio_name}-#{title}.mp3", live_dj, fallible=true, reopen_on_metadata=true, on_close=save_recording)
 clock.assign_new(id="vorbis_icecast", [output.icecast(%vorbis,id="icecast",
                                        mount="#{radio_name}.ogg",
                                        host=icecast_host, port=int_of_string(icecast_port), password="hackme",

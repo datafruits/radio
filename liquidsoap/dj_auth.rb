@@ -2,8 +2,6 @@
 
 Bundler.require
 
-require 'httparty'
-
 username = ARGV[0]
 password = ARGV[1]
 radio_name = ARGV[2]
