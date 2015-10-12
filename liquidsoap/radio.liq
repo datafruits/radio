@@ -19,7 +19,7 @@ icecast_port = getenv("ICECAST_PORT_8000_TCP_PORT")
 title_prefix = ref ""
 
 def save_recording(filename) =
-  result = get_process_lines("rbenv exec bundle exec ruby ./save_recording.rb #{filename} #{radio_name}")
+  result = get_process_lines("rbenv exec bundle exec ruby ./save_recording.rb \"#{filename}\" #{radio_name}")
   log("save_recording: #{result}")
 end
 
