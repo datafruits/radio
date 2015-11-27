@@ -15,6 +15,33 @@ radio_name = getenv("RADIO_NAME")
 icecast_host = getenv("ICECAST_PORT_8000_TCP_ADDR")
 icecast_port = getenv("ICECAST_PORT_8000_TCP_PORT")
 
+def icy_update(v) =
+  # Parse the argument
+  l = string.split(separator=",",v)
+  def split(l,v) =
+    v = string.split(separator="=",v)
+    if list.length(v) >= 2 then
+      list.append(l,[(list.nth(v,0),list.nth(v,1))])
+    else
+      l
+    end
+  end
+  meta = list.fold(split,[],l)
+
+  # Update metadata
+  icy.update_metadata(mount="#{radio_name}.ogg",password="hackme",
+                      host=icecast_host,meta)
+  icy.update_metadata(mount="#{radio_name}.mp3",password="hackme",
+                      host=icecast_host,meta)
+  "Done !"
+end
+
+server.register("update",namespace="metadata",
+                 description="Update metadata",
+                 usage="update title=foo,album=bar,..",
+                 icy_update)
+
+
 # refs
 title_prefix = ref ""
 
@@ -85,10 +112,10 @@ end
 live_dj = map_metadata(new_meta, live_dj,update=false)
 on_fail = single("./emergency_broadcast.wav")
 
-source = fallback(track_sensitive=false,
+source = fallback(id="fallback",track_sensitive=false,
                   [clock(live_dj),backup_playlist,on_fail])
 
-source = server.insert_metadata(id="live_dj", source)
+source = server.insert_metadata(id="fallback", source)
 
 title = '$(if $(title),"$(title)",\
          "Emission inconnue")$(if $(artist), \
