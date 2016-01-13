@@ -34,8 +34,8 @@ ADD rbenv.sh /etc/profile.d/rbenv.sh
 
 ENV CONFIGURE_OPTS --disable-install-doc
 
-RUN rbenv install 2.1.5
-RUN rbenv global 2.1.5
+RUN rbenv install 2.3.0
+RUN rbenv global 2.3.0
 RUN rbenv exec gem install bundler
 
 # add liquidsoap user for compilation
