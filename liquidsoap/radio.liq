@@ -91,8 +91,14 @@ end
 
 def my_request_function () =
   result = get_process_lines("rbenv exec bundle exec ruby ./next_song.rb")
-  log("next song: #{result}")
-  request.create(list.hd(result))
+  json = of_json(default=[("error","fail")], result)
+  log("json: #{json}")
+  track = json["track"]
+  cue_in = json["cue_in"]
+  cue_out = json["cue_out"]
+  fade_in = json["fade_in"]
+  fade_out = json["fade_out"]
+  request.create("annotate:liq_fade_in=\"#{fade_in}\",liq_fade_out=\"#{fade_out}\",liq_cue_in=\"#{cue_in}\",liq_cue_out=\"#{cue_out}\":/home/liquidsoap/tracks/#{track}")
 end
 
 # backup_playlist = playlist("http://#{radio_name}.streampusher.io/playlist.txt",conservative=true,mode=normal,reload_mode="watch")
