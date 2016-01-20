@@ -96,20 +96,16 @@ def my_request_function () =
   log("json: #{json}")
   track = json["track"]
   cue_in = int_of_string(json["cue_in"])
-  log("cue_in: #{cue_in}")
   cue_out = int_of_string(json["cue_out"])
-  log("cue_out: #{cue_out}")
   fade_in = int_of_string(json["fade_in"])
-  log("fade_in: #{fade_in}")
   fade_out = int_of_string(json["fade_out"])
-  log("fade_out: #{fade_out}")
   annotate_line = "annotate:liq_fade_in=#{fade_in},liq_fade_out=#{fade_out},liq_cue_in=#{cue_in},liq_cue_out=#{cue_out}:/home/liquidsoap/tracks/#{track}"
   log("annotate_line: #{annotate_line}")
   request.create(annotate_line)
 end
 
 # backup_playlist = playlist("http://#{radio_name}.streampusher.io/playlist.txt",conservative=true,mode=normal,reload_mode="watch")
-backup_playlist = request.dynamic(my_request_function)
+backup_playlist = cue_cut(request.dynamic(my_request_function))
 output.dummy(fallible=true,backup_playlist)
 live_dj = audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=30.0))
 
