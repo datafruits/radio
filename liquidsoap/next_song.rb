@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 Bundler.require
 if ENV['RAILS_ENV'] == 'development'
-  host = "streampusher_rails_1:3000"
+  host = "rails:3000/radios/#{ENV['RADIO_NAME']}"
 else
   host = "#{ENV['RADIO_NAME']}.streampusher.com"
 end
