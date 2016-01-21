@@ -16,7 +16,7 @@ RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y --force-yes build-essential autoconf curl git ocaml ocaml-native-compilers camlp4-extra opam \
   libmad0-dev libtag1-dev libmp3lame-dev libogg-dev libvorbis-dev \
   pkg-config \
-  wget
+  wget telnet
 # for ruby
 RUN apt-get install -y --force-yes libssl-dev libreadline-dev
 # sox
