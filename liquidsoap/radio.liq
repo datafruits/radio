@@ -104,8 +104,7 @@ def my_request_function () =
   request.create(annotate_line)
 end
 
-# backup_playlist = playlist("http://#{radio_name}.streampusher.io/playlist.txt",conservative=true,mode=normal,reload_mode="watch")
-backup_playlist = cue_cut(request.dynamic(my_request_function))
+backup_playlist = cue_cut(request.dynamic(id="requests", my_request_function))
 output.dummy(fallible=true,backup_playlist)
 live_dj = audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=30.0))
 
