@@ -87,14 +87,14 @@ ocaml-vorbis
 # ocaml-voaacenc
 
 # FDK-AAC is for AAC and AAC+ encoding
-# ocaml-fdkaac
+ocaml-fdkaac
 
 # FAAD for AAC decoding.
-# ocaml-faad
+ocaml-faad
 
 # FLAC is for flac, native and/or ogg (if using ocaml-ogg)
 # format decoding and encoding.
-# ocaml-flac
+ocaml-flac
 
 # ============================================================================
 # Sound processing

@@ -12,9 +12,12 @@ RUN apt-get install -y software-properties-common
 RUN add-apt-repository ppa:avsm/ppa
 RUN apt-get update && apt-get upgrade -y
 
+# for libfaac etc
+RUN apt-add-repository multiverse && sudo apt-get update
+
 # for liquidsoap
 RUN apt-get install -y --force-yes build-essential autoconf curl git ocaml ocaml-native-compilers camlp4-extra opam \
-  libmad0-dev libtag1-dev libmp3lame-dev libogg-dev libvorbis-dev \
+  libmad0-dev libtag1-dev libmp3lame-dev libogg-dev libvorbis-dev libfaac-dev libfaad-dev libfdk-aac-dev libflac-dev \
   pkg-config \
   wget telnet
 # for ruby
