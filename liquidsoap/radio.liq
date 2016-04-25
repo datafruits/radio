@@ -105,12 +105,13 @@ def my_request_function () =
   request.create(annotate_line)
 end
 
+backup_playlist = cue_cut(request.dynamic(id="requests", my_request_function))
+
 if crossfade_enabled == "true" then
-  backup_playlist = smart_crossfade(cue_cut(request.dynamic(id="requests", my_request_function)))
+  output.dummy(fallible=true,smart_crossfade(backup_playlist))
 else
-  backup_playlist = cue_cut(request.dynamic(id="requests", my_request_function))
+  output.dummy(fallible=true,backup_playlist)
 end
-output.dummy(fallible=true,backup_playlist)
 live_dj = audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=30.0))
 
 def new_meta(m) =
@@ -123,10 +124,9 @@ def new_meta(m) =
 end
 
 live_dj = map_metadata(new_meta, live_dj,update=false)
-on_fail = single("./emergency_broadcast.wav")
 
 source = fallback(id="fallback",track_sensitive=false,
-                  [clock(live_dj),backup_playlist,on_fail])
+                  [clock(live_dj),mksafe(backup_playlist)])
 
 source = server.insert_metadata(id="fallback", source)
 
