@@ -101,7 +101,7 @@ def my_request_function () =
   log("cue_out: #{cue_out}")
   fade_in = int_of_string(json["fade_in"])
   fade_out = int_of_string(json["fade_out"])
-  if cue_out == 0
+  if cue_out == 0 then
     # don't set cue out if its 0
     annotate_line = "annotate:liq_fade_in=#{fade_in},liq_fade_out=#{fade_out},liq_cue_in=#{cue_in},liq_cue_out=#{cue_out}:/home/liquidsoap/tracks/#{track}"
   else
