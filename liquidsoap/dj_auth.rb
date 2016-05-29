@@ -9,8 +9,7 @@ radio_name = ARGV[2]
 opts = { body: { :user => {"login" => username, "password" => password} } }
 
 if ENV['RAILS_ENV'] == 'development'
-  # TODO find a better way to get the docker host
-  host = 'docker:3000'
+  host = 'rails:3000'
   puts true
   exit(0)
 else

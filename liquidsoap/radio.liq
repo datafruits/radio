@@ -12,8 +12,8 @@ set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
 set("harbor.bind_addr","0.0.0.0")
 # needs these env variables
 radio_name = getenv("RADIO_NAME")
-icecast_host = getenv("ICECAST_PORT_8000_TCP_ADDR")
-icecast_port = getenv("ICECAST_PORT_8000_TCP_PORT")
+icecast_host = "#{radio_name}_icecast"
+icecast_port = "8000"
 crossfade_enabled = getenv("CROSSFADE")
 
 def icy_update(v) =
@@ -104,11 +104,13 @@ def my_request_function () =
   if cue_out == 0 then
     # don't set cue out if its 0
     annotate_line = "annotate:liq_fade_in=#{fade_in},liq_fade_out=#{fade_out},liq_cue_in=#{cue_in},liq_cue_out=#{cue_out}:/home/liquidsoap/tracks/#{track}"
+    log("annotate_line: #{annotate_line}")
+    request.create(annotate_line)
   else
     annotate_line = "annotate:liq_fade_in=#{fade_in},liq_fade_out=#{fade_out},liq_cue_in=#{cue_in},liq_cue_out=#{cue_out}:/home/liquidsoap/tracks/#{track}"
+    log("annotate_line: #{annotate_line}")
+    request.create(annotate_line)
   end
-  log("annotate_line: #{annotate_line}")
-  request.create(annotate_line)
 end
 
 backup_playlist = cue_cut(request.dynamic(id="requests", my_request_function))
