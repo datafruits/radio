@@ -10,10 +10,10 @@ RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y build-essential wget libxslt1-dev libvorbis-dev
 RUN apt-get clean
 
-RUN wget http://downloads.xiph.org/releases/icecast/icecast-2.4.2.tar.gz
-RUN tar xvf icecast-2.4.2.tar.gz
+RUN wget http://downloads.xiph.org/releases/icecast/icecast-2.4.3.tar.gz
+RUN tar xvf icecast-2.4.3.tar.gz
 
-RUN cd icecast-2.4.2; ./configure && make && make install
+RUN cd icecast-2.4.3; ./configure && make && make install
 
 ADD icecast.xml /icecast.xml
 RUN useradd --create-home -s /bin/bash icecast
