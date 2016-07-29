@@ -12,7 +12,7 @@ set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
 set("harbor.bind_addr","0.0.0.0")
 # needs these env variables
 radio_name = getenv("RADIO_NAME")
-icecast_host = "#{radio_name}_icecast"
+icecast_host = "icecast"
 icecast_port = "8000"
 crossfade_enabled = getenv("CROSSFADE")
 
