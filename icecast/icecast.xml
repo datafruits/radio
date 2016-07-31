@@ -13,8 +13,8 @@
     -->
 
     <limits>
-        <clients>100</clients>
-        <sources>2</sources>
+        <clients>1000</clients>
+        <sources>50</sources>
         <queue-size>524288</queue-size>
         <client-timeout>30</client-timeout>
         <header-timeout>15</header-timeout>
