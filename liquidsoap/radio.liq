@@ -145,7 +145,7 @@ source = fallback(id="fallback",track_sensitive=false,
 source = server.insert_metadata(id="fallback", source)
 
 if tunein_metadata_updates_enabled == "true" then
-  source = on_track(tunein.submit(partnerid="ppppid",partnerkey="ppppkey",stationid="s123456"), s)
+  source = on_track(tunein.submit(partnerid="ppppid",partnerkey="ppppkey",stationid="s123456"), source)
 end
 
 title = '$(if $(title),"$(title)",\
