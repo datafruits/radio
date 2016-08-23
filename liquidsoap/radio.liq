@@ -1,4 +1,5 @@
 #!/usr/local/bin/liquidsoap
+%include "tunein.liq"
 
 set("log.file",true)
 set("log.file.path","/var/log/liquidsoap.log")
@@ -15,6 +16,10 @@ radio_name = getenv("RADIO_NAME")
 icecast_host = "icecast"
 icecast_port = "8000"
 crossfade_enabled = getenv("CROSSFADE")
+
+tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
+tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
+tunein_station_id = getenv("TUNEIN_STATION_ID")
 
 def icy_update(v) =
   # Parse the argument
@@ -137,6 +142,8 @@ source = fallback(id="fallback",track_sensitive=false,
                   [clock(live_dj),mksafe(backup_playlist)])
 
 source = server.insert_metadata(id="fallback", source)
+
+source = on_track(tunein.submit(partnerid="ppppid",partnerkey="ppppkey",stationid="s123456"), s)
 
 title = '$(if $(title),"$(title)",\
          "Emission inconnue")$(if $(artist), \
