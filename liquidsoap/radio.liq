@@ -20,6 +20,7 @@ crossfade_enabled = getenv("CROSSFADE")
 tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
 tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
 tunein_station_id = getenv("TUNEIN_STATION_ID")
+tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
 
 def icy_update(v) =
   # Parse the argument
@@ -143,7 +144,9 @@ source = fallback(id="fallback",track_sensitive=false,
 
 source = server.insert_metadata(id="fallback", source)
 
-source = on_track(tunein.submit(partnerid="ppppid",partnerkey="ppppkey",stationid="s123456"), s)
+if tunein_metadata_updates_enabled == "true" then
+  source = on_track(tunein.submit(partnerid="ppppid",partnerkey="ppppkey",stationid="s123456"), s)
+end
 
 title = '$(if $(title),"$(title)",\
          "Emission inconnue")$(if $(artist), \
