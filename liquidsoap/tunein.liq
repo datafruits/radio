@@ -11,16 +11,17 @@
 # @param ~stationid Set to supplied stationId.
 # @param ~commercial Set to true if track is a commercial.  Defaults to false.
 def tunein.submit(~partnerid,~partnerkey,~stationid,~commercial=false,m) =
+  artist = if m["artist"] == "" then "-" else m["artist"] end
   params = [
     "partnerId=" ^ url.encode(partnerid),
     "partnerKey=" ^ url.encode(partnerkey),
     "id=" ^ url.encode(stationid),
     "title=" ^ url.encode(m["title"]),
-    "artist=" ^ url.encode(m["artist"]),
+    "artist=" ^ url.encode(artist),
     "album=" ^ url.encode(m["album"]),
     "commercial=#{commercial}"
   ]
-  log(level=3, "tunein.submit: title=#{m['title']}; artist=#{m['artist']}; " ^
+  log(level=3, "tunein.submit: title=#{m['title']}; artist=#{artist}; " ^
                "album=#{m['album']}; commercial=#{commercial}")
   url = "http://air.radiotime.com/Playing.ashx?" ^ string.concat(separator="&", params)
   log(level=4, "tunein.submit: url=" ^ url)
