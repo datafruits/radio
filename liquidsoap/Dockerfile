@@ -70,6 +70,7 @@ RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; eval `opam config 
 
 RUN mkdir /home/liquidsoap/radio
 ADD ./ /home/liquidsoap/radio/
+RUN mkdir /home/liquidsoap/tracks
 
 WORKDIR /home/liquidsoap/radio
 RUN rbenv exec bundle install
