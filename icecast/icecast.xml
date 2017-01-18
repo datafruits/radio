@@ -208,7 +208,7 @@
 
         <!-- Note that if <chroot> is turned on below, these paths must both
              be relative to the new root, not the original root -->
-        <logdir>/usr/local/var/log/icecast</logdir>
+        <logdir>/usr/local/share/icecast/logs</logdir>
         <webroot>/usr/local/share/icecast/web</webroot>
         <adminroot>/usr/local/share/icecast/admin</adminroot>
         <!-- <pidfile>/usr/local/share/icecast/icecast.pid</pidfile> -->
