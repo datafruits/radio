@@ -1,17 +1,4 @@
 <icecast>
-    <!-- location and admin are two arbitrary strings that are e.g. visible
-         on the server info page of the icecast web interface
-         (server_version.xsl). -->
-    <location>Earth</location>
-    <admin>icemaster@localhost</admin>
-
-    <!-- IMPORTANT!
-         Especially for inexperienced users:
-         Start out by ONLY changing all passwords and restarting Icecast.
-         For detailed setup instructions please refer to the documentation.
-         It's also available here: http://icecast.org/docs/
-    -->
-
     <limits>
         <clients>1000</clients>
         <sources>50</sources>
@@ -84,20 +71,6 @@
         <ssl>1</ssl>
     </listen-socket>
     -->
-
-
-    <!-- Global header settings
-         Headers defined here will be returned for every HTTP request to Icecast.
-
-         The ACAO header makes Icecast public content/API by default
-         This will make streams easier embeddable (some HTML5 functionality needs it).
-         Also it allows direct access to e.g. /status-json.xsl from other sites.
-         If you don't want this, comment out the following line or read up on CORS.
-    -->
-    <http-headers>
-        <header name="Access-Control-Allow-Origin" value="*" />
-    </http-headers>
-
 
     <!-- Relaying
          You don't need this if you only have one server.
