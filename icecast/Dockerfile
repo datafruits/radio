@@ -7,13 +7,12 @@ ENV LANG en_US.UTF-8
 
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y build-essential wget libxslt1-dev libvorbis-dev
+RUN apt-get install -y build-essential wget libxslt1-dev libvorbis-dev git
 RUN apt-get clean
 
-RUN wget http://downloads.xiph.org/releases/icecast/icecast-2.4.3.tar.gz
-RUN tar xvf icecast-2.4.3.tar.gz
+RUN git clone https://github.com/karlheyes/icecast-kh.git
 
-RUN cd icecast-2.4.3; ./configure && make && make install
+RUN cd icecast-kh; ./configure && make && make install
 
 ADD icecast.xml /icecast.xml
 RUN useradd --create-home -s /bin/bash icecast
