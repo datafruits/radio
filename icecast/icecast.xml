@@ -147,6 +147,15 @@
     </mount>
     -->
 
+    <mount>
+	<mount-name>/GMRadio.mp3</mount-name>
+	<authentication type="htpasswd">
+	    <option name="filename" value="myauth"/>
+	    <option name="allow_duplicate_users" value="0"/>
+	</authentication>
+    </mount>
+
+
     <!-- Normal mounts -->
     <!--
     <mount type="normal">
