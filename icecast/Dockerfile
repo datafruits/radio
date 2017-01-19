@@ -20,9 +20,9 @@ RUN useradd --create-home -s /bin/bash icecast
 RUN chown icecast:users /icecast.xml
 RUN mkdir -p /usr/local/var/log/icecast/
 RUN touch /usr/local/var/log/icecast/access.log
-RUN chown icecast:users /usr/local/var/log/icecast/access.log
 RUN touch /usr/local/var/log/icecast/error.log
-RUN chown icecast:users /usr/local/var/log/icecast/error.log
+RUN touch /usr/local/var/log/icecast/myauth
+RUN chown -R icecast:users /usr/local/var/log/icecast/
 
 USER icecast
 
