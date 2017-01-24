@@ -25,7 +25,6 @@ RUN mkdir -p /usr/local/share/icecast/admin
 
 RUN touch /usr/local/share/icecast/logs/access.log
 RUN touch /usr/local/share/icecast/logs/error.log
-RUN touch /usr/local/var/log/icecast/myauth
 
 RUN chown -R icecast:users /usr/local/share/icecast
 
