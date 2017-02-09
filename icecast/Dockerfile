@@ -26,6 +26,9 @@ RUN mkdir -p /usr/local/share/icecast/admin
 RUN touch /usr/local/share/icecast/logs/access.log
 RUN touch /usr/local/share/icecast/logs/error.log
 
+ADD status-json.xsl /usr/local/share/icecast/web
+ADD xml2json.xslt /usr/local/share/icecast/web
+
 RUN chown -R icecast:users /usr/local/share/icecast
 
 USER icecast
