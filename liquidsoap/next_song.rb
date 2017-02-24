@@ -6,5 +6,5 @@ else
   host = "#{ENV['RADIO_NAME']}.streampusher.com"
 end
 
-resp = HTTParty.get("http://#{host}/next.json")
+resp = HTTParty.get("https://#{host}/next.json")
 puts JSON.parse(resp.body).to_json
