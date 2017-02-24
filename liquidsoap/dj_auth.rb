@@ -16,7 +16,7 @@ else
   host = "#{ENV['RADIO_NAME']}.streampusher.com"
 end
 
-resp = HTTParty.post("http://#{host}/login.json", opts)
+resp = HTTParty.post("https://#{host}/login.json", opts)
 if resp["success"] == true
   puts true
 else
