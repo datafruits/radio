@@ -154,11 +154,11 @@ clock.assign_new(id="vorbis_icecast", [output.icecast(%vorbis,id="icecast",
                                        mount="#{radio_name}.ogg",
                                        host=icecast_host, port=int_of_string(icecast_port), password="hackme",
                                        icy_metadata="true",description="",
-                                       url="",
+                                       url="", encoding="UTF-8",
                                        mksafe(buffer(source)))])
 clock.assign_new(id="mp3_icecast", [output.icecast(%mp3,id="icecast",
                                     mount="#{radio_name}.mp3",
                                     host=icecast_host, port=int_of_string(icecast_port), password="hackme",
                                     icy_metadata="true",description="",
-                                    url="",
+                                    url="", encoding="UTF-8",
                                     mksafe(buffer(source)))])
