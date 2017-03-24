@@ -18,6 +18,7 @@ RUN apt-add-repository multiverse && sudo apt-get update
 # for liquidsoap
 RUN apt-get install -y --force-yes build-essential autoconf curl git ocaml ocaml-native-compilers camlp4-extra opam \
   libmad0-dev libtag1-dev libmp3lame-dev libogg-dev libvorbis-dev libfaac-dev libfaad-dev libfdk-aac-dev libflac-dev \
+  libmagic-dev libmagic-ocaml-dev \
   pkg-config \
   wget telnet
 # for ruby
