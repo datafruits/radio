@@ -64,6 +64,8 @@ RUN cd ~; opam install -y base-bytes pcre camomile magic
 RUN cd /home/liquidsoap; git clone https://github.com/savonet/liquidsoap-full
 ADD PACKAGES /home/liquidsoap/liquidsoap-full/PACKAGES
 RUN ["/bin/bash", "-c", "ls -lha ~"]
+RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full/liquidsoap; git submodule update --init --remote --recursive;"]
+RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full/liquidsoap; git rev-parse HEAD;"]
 RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; ./bootstrap;"]
 RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; eval `opam config env`; ./configure;"]
 RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; eval `opam config env`; make;"]
