@@ -2,6 +2,11 @@
     <limits>
         <clients>1000</clients>
         <sources>50</sources>
+
+        <!-- how many threads to use for processing clients, should be
+             based on the number of CPUs or cores -->
+        <workers>1</workers>
+
         <queue-size>524288</queue-size>
         <client-timeout>30</client-timeout>
         <header-timeout>15</header-timeout>
@@ -188,7 +193,7 @@
              this example will redirect all requests for http://server:port/ to
              the status page
         -->
-        <alias source="/" destination="/status.xsl"/>
+        <alias source="/" dest="/status.xsl"/>
         <!-- The certificate file needs to contain both public and private part.
              Both should be PEM encoded.
         <ssl-certificate>/usr/local/share/icecast/icecast.pem</ssl-certificate>
