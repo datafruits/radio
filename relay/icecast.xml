@@ -198,6 +198,7 @@
              Both should be PEM encoded.
         <ssl-certificate>/usr/local/share/icecast/icecast.pem</ssl-certificate>
         -->
+        <x-forwarded-for>127.0.0.1</x-forwarded-for>
     </paths>
 
     <logging>
