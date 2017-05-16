@@ -30,7 +30,7 @@ def icy_update(v) =
   def split(l,v) =
     v = string.split(separator="=",v)
     if list.length(v) >= 2 then
-      list.append(l,[(list.nth(v,0),list.nth(v,1))])
+      list.append(l,[(list.nth(v,0,default=""),list.nth(v,1,default=""))])
     else
       l
     end
@@ -62,7 +62,7 @@ end
 def get_user(user,password) =
   if user == "source" then
     x = string.split(separator=';',password)
-    list.nth(x,0)
+    list.nth(x,0,default="")
   else
     user
   end
@@ -71,7 +71,7 @@ end
 def get_password(user,password) =
   if user == "source" then
     x = string.split(separator=';',password)
-    list.nth(x,1)
+    list.nth(x,1,default="")
   else
     password
   end
