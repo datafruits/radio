@@ -84,7 +84,7 @@ def dj_auth(user,password) =
   #get the output of the php script
   ret = get_process_lines("rbenv exec bundle exec ruby ./dj_auth.rb #{u} #{p} #{radio_name}")
   #ret has now the value of the live client (dj1,dj2, or djx), or "ERROR"/"unknown"
-  ret = list.hd(ret)
+  ret = list.hd(default="",ret)
   #return true to let the client transmit data, or false to tell harbor to decline
   if ret == "true" then
     title_prefix := "LIVE -- #{u}"
@@ -99,7 +99,7 @@ def on_disconnect() =
 end
 
 def my_request_function () =
-  result = list.hd(get_process_lines("rbenv exec bundle exec ruby ./next_song.rb"))
+  result = list.hd(default="",get_process_lines("rbenv exec bundle exec ruby ./next_song.rb"))
   log("result: #{result}")
   json = of_json(default=[("error","fail")], result)
   log("json: #{json}")
