@@ -12,7 +12,6 @@ set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
 
 set("harbor.bind_addr","0.0.0.0")
 
-set("decoder.taglib.force_mpeg", true)
 # needs these env variables
 radio_name = getenv("RADIO_NAME")
 icecast_host = "icecast"
