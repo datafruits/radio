@@ -125,12 +125,12 @@ def my_request_function () =
   end
 end
 
-backup_playlist = cue_cut(request.dynamic(id="requests", my_request_function))
+backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", my_request_function)))
 
 if crossfade_enabled == "true" then
-  output.dummy(fallible=true,smart_crossfade(audio_to_stereo(backup_playlist)))
+  output.dummy(fallible=true,smart_crossfade(backup_playlist))
 else
-  output.dummy(fallible=true,audio_to_stereo(backup_playlist))
+  output.dummy(fallible=true,backup_playlist)
 end
 live_dj = audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=30.0))
 
