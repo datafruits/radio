@@ -85,7 +85,6 @@ end
 def dj_auth(user,password) =
   u = get_user(user,password)
   p = get_password(user,password)
-  #get the output of the php script
   ret = get_process_lines(env=env, "rbenv exec bundle exec ruby ./dj_auth.rb '#{u}' '#{p}' '#{radio_name}'")
   #ret has now the value of the live client (dj1,dj2, or djx), or "ERROR"/"unknown"
   ret = list.hd(default="",ret)
