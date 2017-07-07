@@ -26,6 +26,9 @@ RUN apt-get install -y --force-yes libssl-dev libreadline-dev
 # sox
 RUN apt-get install -y --force-yes sox libsox-fmt-mp3
 
+# jq
+RUN apt-get install -y --force-yes jq
+
 RUN apt-get clean
 
 # Install rbenv and ruby-build
