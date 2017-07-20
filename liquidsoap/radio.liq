@@ -97,7 +97,7 @@ def on_disconnect() =
 end
 
 def my_request_function () =
-  result = list.hd(default="",get_process_lines("rbenv exec bundle exec ruby ./next_song.rb"))
+  result = list.hd(default="",get_process_lines("./next_song.sh"))
   log("result: #{result}")
   json = of_json(default=[("error","fail")], result)
   log("json: #{json}")
