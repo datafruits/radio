@@ -126,7 +126,7 @@ if crossfade_enabled == "true" then
 else
   output.dummy(fallible=true,backup_playlist)
 end
-live_dj = audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=30.0))
+live_dj = audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
 
 def new_meta(m) =
   if "#{title_prefix}" == "" then
@@ -138,6 +138,22 @@ def new_meta(m) =
 end
 
 live_dj = map_metadata(new_meta, live_dj,update=false)
+  def gracetime(~delay=3.,f)
+    last_true = ref 0.
+    { if f() then
+        last_true := gettimeofday()
+        true
+      else
+        gettimeofday() < !last_true+delay
+      end }
+  end
+
+  def connected()
+    status = list.hd(server.execute("#{id}.status"))
+    not(list.mem(status,["polling","stopped"]))
+  end
+  connected = gracetime(connected)
+
 
 source = fallback(id="fallback",track_sensitive=false,
                   [clock(live_dj),mksafe(backup_playlist)])
