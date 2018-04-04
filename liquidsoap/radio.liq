@@ -53,11 +53,6 @@ server.register("update",namespace="metadata",
 # refs
 title_prefix = ref ""
 
-def save_recording(filename) =
-  result = get_process_lines("rbenv exec bundle exec ruby ./save_recording.rb \"#{filename}\" #{radio_name}")
-  log("save_recording: #{result}")
-end
-
 def get_user(user,password) =
   if user == "source" then
     x = string.split(separator=';',password)
