@@ -157,6 +157,8 @@ source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submi
 
 source = server.insert_metadata(id="fallback", source)
 
+source = mksafe(pipe(process='./stereo_tool_cmd_64 - - -s ./datafruitsfm.sts -q', source))
+
 title = '$(if $(title),"$(title)",\
          "Emission inconnue")$(if $(artist), \
          " par  $(artist)") - %m-%d-%Y, %H:%M:%S'
