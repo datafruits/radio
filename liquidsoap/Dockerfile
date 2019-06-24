@@ -47,7 +47,7 @@ RUN apt-get install -y libpcre3-dev
 
 # install liquidsoap from source
 USER liquidsoap
-RUN cd ~; opam init -y
+RUN cd ~; opam init -y --disable-sandboxing
 RUN cd ~; opam install -y base-bytes pcre camomile magic
 RUN cd /home/liquidsoap; git clone https://github.com/savonet/liquidsoap-full
 ADD PACKAGES /home/liquidsoap/liquidsoap-full/PACKAGES
