@@ -37,7 +37,6 @@ RUN useradd --create-home -s /bin/bash liquidsoap ;\
   adduser liquidsoap sudo
 RUN echo "Defaults    !requiretty" >> /etc/sudoers
 RUN echo "%sudo ALL=NOPASSWD: ALL" >> /etc/sudoers
-#RUN echo '. /home/liquidsoap/.opam/opam-init/init.sh > /dev/null 2> /dev/null || true' >> /home/liquidsoap/.bashrc
 RUN echo 'eval "$(opam config env)"' >> /home/liquidsoap/.bashrc
 
 RUN touch /var/log/liquidsoap.log
@@ -48,13 +47,13 @@ RUN apt-get install -y libpcre3-dev
 # install liquidsoap from source
 USER liquidsoap
 RUN cd ~; opam init -y --disable-sandboxing
-RUN cd ~; opam switch create new 4.07.0
-RUN cd ~; opam install -y base-bytes pcre camomile magic
+RUN cd ~; opam switch create new 4.08.0
 RUN cd /home/liquidsoap; git clone https://github.com/savonet/liquidsoap-full
 ADD PACKAGES /home/liquidsoap/liquidsoap-full/PACKAGES
 RUN ["/bin/bash", "-c", "ls -lha ~"]
 RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full/liquidsoap; git submodule update --init --remote --recursive;"]
 RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full/liquidsoap; git rev-parse HEAD;"]
+RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full/liquidsoap; eval `opam config env`; opam pin add . -y;"]
 RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; ./bootstrap;"]
 RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; eval `opam config env`; ./configure;"]
 RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; eval `opam config env`; make;"]
@@ -63,9 +62,9 @@ RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; eval `opam config 
 RUN mkdir /home/liquidsoap/radio
 ADD ./ /home/liquidsoap/radio/
 RUN mkdir /home/liquidsoap/tracks
+RUN chown liquidsoap:liquidsoap /home/liquidsoap/tracks
 
 WORKDIR /home/liquidsoap/radio
-RUN rbenv exec bundle install
 
 EXPOSE 9000
 CMD liquidsoap radio.liq
