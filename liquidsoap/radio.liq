@@ -1,27 +1,27 @@
 #!/usr/local/bin/liquidsoap
-%include "tunein.liq"
+#%include "tunein.liq"
 
 set("log.file",true)
 set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
 set("log.level",4)
 
-set("server.telnet",true)
-set("server.socket",true)
-set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
-
+# set("server.telnet",true)
+# set("server.socket",true)
+# set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
+#
 set("harbor.bind_addr","0.0.0.0")
 
 # needs these env variables
 radio_name = getenv("RADIO_NAME")
 icecast_host = "icecast"
 icecast_port = "8000"
-crossfade_enabled = getenv("CROSSFADE")
+# crossfade_enabled = getenv("CROSSFADE")
 
-tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
-tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
-tunein_station_id = getenv("TUNEIN_STATION_ID")
-tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
+#tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
+#tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
+#tunein_station_id = getenv("TUNEIN_STATION_ID")
+#tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
 
 def icy_update(v) =
   # Parse the argument
@@ -53,6 +53,14 @@ server.register("update",namespace="metadata",
 # refs
 title_prefix = ref ""
 
+current_dj = ref ""
+current_dj_connected_at = ref 0.0
+current_dump_filename = ref ""
+
+stop_dump_f = ref (fun () -> ())
+
+live_dj = ref empty()
+
 def get_user(user,password) =
   if user == "source" then
     x = string.split(separator=';',password)
@@ -73,6 +81,7 @@ end
 
 #auth function
 def dj_auth(user,password) =
+  log("dj auth")
   u = get_user(user,password)
   p = get_password(user,password)
   ret = get_process_lines("./dj_auth.sh '#{u}' '#{p}' '#{radio_name}'")
@@ -81,15 +90,17 @@ def dj_auth(user,password) =
   #return true to let the client transmit data, or false to tell harbor to decline
   if ret == "true" then
     title_prefix := "LIVE -- #{u}"
+    current_dj := "#{u}"
+    current_dj_connected_at := gettimeofday()
+    log("dj auth succeeded")
+    log("#{current_dj}")
+    log("#{current_dj_connected_at}")
     true
   else
     false
   end
 end
 
-def on_disconnect() =
-  title_prefix := ""
-end
 
 def my_request_function () =
   result = list.hd(default="",get_process_lines("./next_song.sh"))
@@ -114,14 +125,33 @@ def my_request_function () =
   end
 end
 
-backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", my_request_function)))
+backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
 
-if crossfade_enabled == "true" then
-  output.dummy(fallible=true,smart_crossfade(backup_playlist))
-else
-  output.dummy(fallible=true,backup_playlist)
+# if crossfade_enabled == "true" then
+#   output.dummy(fallible=true,smart_crossfade(backup_playlist))
+# else
+#   output.dummy(fallible=true,backup_playlist)
+# end
+
+def on_connect(headers) =
+  log("on_connect")
+  #
+  list.iter(fun(header)-> log("#{fst(header)}: #{snd(header)}"), headers)
+  current_dump_filename := "#{!current_dj}-#{!current_dj_connected_at}"
+  s = output.file(%mp3, "/home/liquidsoap/tracks/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
+  stop_dump_f := fun () -> source.shutdown(s)
 end
-live_dj = audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
+
+def on_disconnect() =
+  log("disconnected")
+  # shutdown source
+  title_prefix := ""
+  current_dj := ""
+  f = !stop_dump_f
+  f ()
+end
+
+live_dj := audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_connect=on_connect,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
 
 def new_meta(m) =
   if "#{title_prefix}" == "" then
@@ -132,35 +162,19 @@ def new_meta(m) =
   end
 end
 
-live_dj = map_metadata(new_meta, live_dj,update=false)
-  def gracetime(~delay=3.,f)
-    last_true = ref 0.
-    { if f() then
-        last_true := gettimeofday()
-        true
-      else
-        gettimeofday() < !last_true+delay
-      end }
-  end
-
-  def connected()
-    status = list.hd(server.execute("#{id}.status"))
-    not(list.mem(status,["polling","stopped"]))
-  end
-  connected = gracetime(connected)
-
+live_dj := map_metadata(new_meta, !live_dj,update=false)
 
 source = fallback(id="fallback",track_sensitive=false,
-                  [clock(live_dj),mksafe(backup_playlist)])
+                  [clock(!live_dj),mksafe(backup_playlist)])
 
-source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
+# source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
+#
+#source = server.insert_metadata(id="fallback", source)
 
-source = server.insert_metadata(id="fallback", source)
-
-title = '$(if $(title),"$(title)",\
-         "Emission inconnue")$(if $(artist), \
-         " par  $(artist)") - %m-%d-%Y, %H:%M:%S'
-output.file(%mp3, "/home/liquidsoap/tracks/#{radio_name}-#{title}.mp3", live_dj, fallible=true, reopen_on_metadata=true)
+# title = '$(if $(title),"$(title)",\
+#          "Emission inconnue")$(if $(artist), \
+#          " par  $(artist)") - %m-%d-%Y'
+#output.file(%mp3, "/home/liquidsoap/tracks/#{radio_name}-#{title}.mp3", live_dj, fallible=true, append=true)
 clock.assign_new(id="vorbis_icecast", [output.icecast(%vorbis,id="icecast",
                                        mount="#{radio_name}.ogg",
                                        host=icecast_host, port=int_of_string(icecast_port), password="hackme",
