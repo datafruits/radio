@@ -1,15 +1,15 @@
 #!/usr/local/bin/liquidsoap
-# %include "tunein.liq"
+%include "tunein.liq"
 
 set("sandbox.tool","disabled")
 set("log.file",true)
 set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
-set("log.level",5)
+set("log.level",4)
 
-#set("server.telnet",true)
-#set("server.socket",true)
-#set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
+set("server.telnet",true)
+set("server.socket",true)
+set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
 
 set("harbor.bind_addrs",["0.0.0.0"])
 
@@ -19,37 +19,37 @@ icecast_host = "icecast"
 icecast_port = "8000"
 crossfade_enabled = getenv("CROSSFADE")
 
-# tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
-# tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
-# tunein_station_id = getenv("TUNEIN_STATION_ID")
-# tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
+tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
+tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
+tunein_station_id = getenv("TUNEIN_STATION_ID")
+tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
 
-# def icy_update(v) =
-#   # Parse the argument
-#   l = string.split(separator=",",v)
-#   def split(l,v) =
-#     v = string.split(separator="=",v)
-#     if list.length(v) >= 2 then
-#       list.append(l,[(list.nth(v,0,default=""),list.nth(v,1,default=""))])
-#     else
-#       l
-#     end
-#   end
-#   meta = list.fold(split,[],l)
-#
-#   # Update metadata
-#   icy.update_metadata(mount="#{radio_name}.ogg",password="hackme",
-#                       host=icecast_host,meta)
-#   icy.update_metadata(mount="#{radio_name}.mp3",password="hackme",
-#                       host=icecast_host,meta)
-#   "Done !"
-# end
-#
-# server.register("update",namespace="metadata",
-#                  description="Update metadata",
-#                  usage="update title=foo,album=bar,..",
-#                  icy_update)
-#
+def icy_update(v) =
+  # Parse the argument
+  l = string.split(separator=",",v)
+  def split(l,v) =
+    v = string.split(separator="=",v)
+    if list.length(v) >= 2 then
+      list.append(l,[(list.nth(v,0,default=""),list.nth(v,1,default=""))])
+    else
+      l
+    end
+  end
+  meta = list.fold(split,[],l)
+
+  # Update metadata
+  icy.update_metadata(mount="#{radio_name}.ogg",password="hackme",
+                      host=icecast_host,meta)
+  icy.update_metadata(mount="#{radio_name}.mp3",password="hackme",
+                      host=icecast_host,meta)
+  "Done !"
+end
+
+server.register("update",namespace="metadata",
+                 description="Update metadata",
+                 usage="update title=foo,album=bar,..",
+                 icy_update)
+
 
 # refs
 title_prefix = ref ""
@@ -97,7 +97,6 @@ def my_request_function () =
   result = list.hd(default="", lines)
   log("result: #{result}")
   log("lines: #{lines}")
-  #log("lines: #{list.tl(lines)}")
   json = of_json(default=[("error","fail")], result)
   log("json: #{json}")
   track = json["track"]
@@ -137,36 +136,20 @@ def new_meta(m) =
 end
 
 live_dj = map_metadata(new_meta, live_dj,update=false)
-# def gracetime(~delay=3.,f)
-#   last_true = ref 0.
-#   { if f() then
-#       last_true := gettimeofday()
-#       true
-#     else
-#       gettimeofday() < !last_true+delay
-#     end }
-# end
-#
-# def connected()
-#   status = list.hd(server.execute("#{id}.status"))
-#   not(list.mem(status,["polling","stopped"]))
-# end
-# connected = gracetime(connected)
-
+live_dj = pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, live_dj)
 
 source = fallback(id="fallback",track_sensitive=false,
                   [live_dj,mksafe(backup_playlist)])
 
-#source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
+source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
 source = server.insert_metadata(id="fallback", source)
 
-source = mksafe(pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer(buffer=10.0,source)))
 
-# title = '$(if $(title),"$(title)",\
-#          "Emission inconnue")$(if $(artist), \
-#          " par  $(artist)") - %m-%d-%Y, %H:%M:%S'
-# output.file(%mp3, "/home/liquidsoap/tracks/#{radio_name}-#{title}.mp3", live_dj, fallible=true, reopen_on_metadata=true)
+title = '$(if $(title),"$(title)",\
+         "Emission inconnue")$(if $(artist), \
+         " par  $(artist)") - %m-%d-%Y, %H:%M:%S'
+output.file(%mp3, "/home/liquidsoap/tracks/#{radio_name}-#{title}.mp3", live_dj, fallible=true, reopen_on_metadata=true)
 clock.assign_new(id="vorbis_icecast", [output.icecast(%vorbis,id="icecast",
                                        mount="#{radio_name}.ogg",
                                        host=icecast_host, port=int_of_string(icecast_port), password="hackme",
