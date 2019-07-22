@@ -25,16 +25,9 @@ def tunein.submit(~partnerid,~partnerkey,~stationid,~commercial=false,m) =
                "album=#{m['album']}; commercial=#{commercial}")
   url = "http://air.radiotime.com/Playing.ashx?" ^ string.concat(separator="&", params)
   log(level=4, "tunein.submit: url=" ^ url)
-  answer = http.get(url)
-  x = fst(answer)
-  status = fst(x)
-  y = fst(status)
-  protocol = fst(y)
-  code = snd(y)
+  let (status, headers, data) = http.get(url)
+  let (protocol, code, desc) = status;
   if code != 200 then
-    desc = snd(status)
-    headers = snd(x)
-    data = snd(answer)
     log(level=3,"tunein.submit: Response status: #{protocol} #{code} #{desc}")
     log(level=4,"Response headers:")
     def log_arg(x) =

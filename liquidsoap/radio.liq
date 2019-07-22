@@ -1,16 +1,17 @@
 #!/usr/local/bin/liquidsoap
 #%include "tunein.liq"
 
+set("sandbox.tool","disabled")
 set("log.file",true)
 set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
 set("log.level",4)
 
-# set("server.telnet",true)
-# set("server.socket",true)
-# set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
-#
-set("harbor.bind_addr","0.0.0.0")
+set("server.telnet",true)
+set("server.socket",true)
+set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
+
+set("harbor.bind_addrs",["0.0.0.0"])
 
 # needs these env variables
 radio_name = getenv("RADIO_NAME")
@@ -103,8 +104,10 @@ end
 
 
 def my_request_function () =
-  result = list.hd(default="",get_process_lines("./next_song.sh"))
+  lines = get_process_lines("./next_song.sh")
+  result = list.hd(default="", lines)
   log("result: #{result}")
+  log("lines: #{lines}")
   json = of_json(default=[("error","fail")], result)
   log("json: #{json}")
   track = json["track"]
@@ -127,12 +130,6 @@ end
 
 backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
 
-# if crossfade_enabled == "true" then
-#   output.dummy(fallible=true,smart_crossfade(backup_playlist))
-# else
-#   output.dummy(fallible=true,backup_playlist)
-# end
-
 def on_connect(headers) =
   log("on_connect")
   #
@@ -149,6 +146,11 @@ def on_disconnect() =
   current_dj := ""
   f = !stop_dump_f
   f ()
+
+if crossfade_enabled == "true" then
+  output.dummy(fallible=true,crossfade(backup_playlist))
+else
+  output.dummy(fallible=true,backup_playlist)
 end
 
 live_dj := audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_connect=on_connect,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
@@ -164,17 +166,16 @@ end
 
 live_dj := map_metadata(new_meta, !live_dj,update=false)
 
-source = fallback(id="fallback",track_sensitive=false,
-                  [clock(!live_dj),mksafe(backup_playlist)])
+live_dj := map_metadata(new_meta, live_dj,update=false)
+live_dj := pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, live_dj)
 
-# source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
-#
+source = fallback(id="fallback",track_sensitive=false,
+                  [live_dj,mksafe(backup_playlist)])
+
+source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
+
 #source = server.insert_metadata(id="fallback", source)
 
-# title = '$(if $(title),"$(title)",\
-#          "Emission inconnue")$(if $(artist), \
-#          " par  $(artist)") - %m-%d-%Y'
-#output.file(%mp3, "/home/liquidsoap/tracks/#{radio_name}-#{title}.mp3", live_dj, fallible=true, append=true)
 clock.assign_new(id="vorbis_icecast", [output.icecast(%vorbis,id="icecast",
                                        mount="#{radio_name}.ogg",
                                        host=icecast_host, port=int_of_string(icecast_port), password="hackme",
