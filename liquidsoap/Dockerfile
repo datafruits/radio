@@ -63,6 +63,7 @@ RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; eval `opam config 
 RUN mkdir /home/liquidsoap/radio
 ADD ./ /home/liquidsoap/radio/
 RUN mkdir /home/liquidsoap/tracks
+RUN chown liquidsoap:liquidsoap /home/liquidsoap/tracks
 
 WORKDIR /home/liquidsoap/radio
 RUN chown 1000:1000 /home/liquidsoap/tracks
