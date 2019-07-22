@@ -1,6 +1,7 @@
 #!/usr/local/bin/liquidsoap
 %include "tunein.liq"
 
+set("sandbox.tool","disabled")
 set("log.file",true)
 set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
@@ -10,7 +11,7 @@ set("server.telnet",true)
 set("server.socket",true)
 set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
 
-set("harbor.bind_addr","0.0.0.0")
+set("harbor.bind_addrs",["0.0.0.0"])
 
 # needs these env variables
 radio_name = getenv("RADIO_NAME")
@@ -92,8 +93,10 @@ def on_disconnect() =
 end
 
 def my_request_function () =
-  result = list.hd(default="",get_process_lines("./next_song.sh"))
+  lines = get_process_lines("./next_song.sh")
+  result = list.hd(default="", lines)
   log("result: #{result}")
+  log("lines: #{lines}")
   json = of_json(default=[("error","fail")], result)
   log("json: #{json}")
   track = json["track"]
@@ -114,10 +117,10 @@ def my_request_function () =
   end
 end
 
-backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", my_request_function)))
+backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
 
 if crossfade_enabled == "true" then
-  output.dummy(fallible=true,smart_crossfade(backup_playlist))
+  output.dummy(fallible=true,crossfade(backup_playlist))
 else
   output.dummy(fallible=true,backup_playlist)
 end
@@ -133,29 +136,15 @@ def new_meta(m) =
 end
 
 live_dj = map_metadata(new_meta, live_dj,update=false)
-  def gracetime(~delay=3.,f)
-    last_true = ref 0.
-    { if f() then
-        last_true := gettimeofday()
-        true
-      else
-        gettimeofday() < !last_true+delay
-      end }
-  end
-
-  def connected()
-    status = list.hd(server.execute("#{id}.status"))
-    not(list.mem(status,["polling","stopped"]))
-  end
-  connected = gracetime(connected)
-
+live_dj = pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, live_dj)
 
 source = fallback(id="fallback",track_sensitive=false,
-                  [clock(live_dj),mksafe(backup_playlist)])
+                  [live_dj,mksafe(backup_playlist)])
 
 source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
 source = server.insert_metadata(id="fallback", source)
+
 
 title = '$(if $(title),"$(title)",\
          "Emission inconnue")$(if $(artist), \

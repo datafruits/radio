@@ -66,6 +66,7 @@ RUN mkdir /home/liquidsoap/tracks
 RUN chown liquidsoap:liquidsoap /home/liquidsoap/tracks
 
 WORKDIR /home/liquidsoap/radio
+RUN chown 1000:1000 /home/liquidsoap/tracks
 
 EXPOSE 9000
 CMD liquidsoap radio.liq
