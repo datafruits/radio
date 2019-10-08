@@ -17,12 +17,12 @@ set("harbor.bind_addrs",["0.0.0.0"])
 radio_name = getenv("RADIO_NAME")
 icecast_host = "icecast"
 icecast_port = "8000"
-# crossfade_enabled = getenv("CROSSFADE")
+crossfade_enabled = getenv("CROSSFADE")
 
-#tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
-#tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
-#tunein_station_id = getenv("TUNEIN_STATION_ID")
-#tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
+tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
+tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
+tunein_station_id = getenv("TUNEIN_STATION_ID")
+tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
 
 def icy_update(v) =
   # Parse the argument
@@ -55,7 +55,9 @@ server.register("update",namespace="metadata",
 title_prefix = ref ""
 
 current_dj = ref ""
+last_dj_disconnected = ref ""
 current_dj_connected_at = ref 0.0
+last_dj_disconnected_at = ref 0.0
 current_dump_filename = ref ""
 
 stop_dump_f = ref (fun () -> ())
@@ -132,20 +134,33 @@ backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout
 
 def on_connect(headers) =
   log("on_connect")
-  #
   list.iter(fun(header)-> log("#{fst(header)}: #{snd(header)}"), headers)
-  current_dump_filename := "#{!current_dj}-#{!current_dj_connected_at}"
+  # if they disconnected over 60 seconds ago, use new filename
+  log("current_dj_connected_at: #{!current_dj_connected_at}")
+  log("last_dj_disconnected_at: #{!last_dj_disconnected_at}")
+  if ((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) && (!current_dj == !last_dj_disconnected) then
+    log("*****************************************CREATING NEW DUMP***************************************************")
+    current_dump_filename := "#{!current_dj}-#{!current_dj_connected_at}"
+  else
+    log("*****************************************APPENDING TO PREVIOUS DUMP***************************************************")
+  end
+  # else append to the old file (dont change the current_dump_filename)
+  # last_dj_connected_at := !current_dj_connected_at
   s = output.file(%mp3, "/home/liquidsoap/tracks/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
   stop_dump_f := fun () -> source.shutdown(s)
 end
 
 def on_disconnect() =
   log("disconnected")
+  last_dj_disconnected_at := gettimeofday()
+  last_dj_disconnected :=
   # shutdown source
   title_prefix := ""
+  last_dj_disconnected := !current_dj
   current_dj := ""
   f = !stop_dump_f
   f ()
+end
 
 if crossfade_enabled == "true" then
   output.dummy(fallible=true,crossfade(backup_playlist))
@@ -166,15 +181,14 @@ end
 
 live_dj := map_metadata(new_meta, !live_dj,update=false)
 
-live_dj := map_metadata(new_meta, live_dj,update=false)
 live_dj := pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, live_dj)
 
 source = fallback(id="fallback",track_sensitive=false,
-                  [live_dj,mksafe(backup_playlist)])
+                  [!live_dj,mksafe(backup_playlist)])
 
 source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
-#source = server.insert_metadata(id="fallback", source)
+source = server.insert_metadata(id="fallback", source)
 
 clock.assign_new(id="vorbis_icecast", [output.icecast(%vorbis,id="icecast",
                                        mount="#{radio_name}.ogg",
