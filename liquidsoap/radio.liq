@@ -135,6 +135,16 @@ def new_meta(m) =
   end
 end
 
+def on_track(m) =
+  log("on_track");
+  title = m["title"]
+  #url = "https://${RADIO_NAME}.streampusher.com/publish_metadata"
+  url = "http://rails:3000/publish_metadata"
+  let (status, headers, data) = http.post(headers=[("Content-Type","application/x-www-form-urlencoded")],data="metadata=#{title}", url)
+  let (protocol, code, desc) = status;
+  log(code);
+end
+
 live_dj = map_metadata(new_meta, live_dj,update=false)
 live_dj = pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, live_dj)
 
@@ -142,6 +152,8 @@ source = fallback(id="fallback",track_sensitive=false,
                   [live_dj,mksafe(backup_playlist)])
 
 source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
+
+source = on_track(pub_metadata, source)
 
 source = server.insert_metadata(id="fallback", source)
 
