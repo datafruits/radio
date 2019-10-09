@@ -135,14 +135,14 @@ def new_meta(m) =
   end
 end
 
-def on_track(m) =
+def pub_metadata(m) =
   log("on_track");
   title = m["title"]
   #url = "https://${RADIO_NAME}.streampusher.com/publish_metadata"
   url = "http://rails:3000/publish_metadata"
   let (status, headers, data) = http.post(headers=[("Content-Type","application/x-www-form-urlencoded")],data="metadata=#{title}", url)
   let (protocol, code, desc) = status;
-  log(code);
+  log("response code: #{code}");
 end
 
 live_dj = map_metadata(new_meta, live_dj,update=false)
