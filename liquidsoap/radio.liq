@@ -138,13 +138,16 @@ end
 def pub_metadata(m) =
   log("on_track");
   title = m["title"]
-  #url = "https://${RADIO_NAME}.streampusher.com/publish_metadata"
-  url = "http://rails:3000/publish_metadata"
-  let (status, headers, data) = http.post(headers=[("Content-Type","application/x-www-form-urlencoded")],data="metadata=#{title}", url)
+  url = "https://${RADIO_NAME}.streampusher.com/publish_metadata"
+  let (status, headers, data) = http.post(headers=[("Content-Type","application/json"), ("Accept", "application/json")],data="{\"metadata\": \"#{title}\"}", url)
+  log("data: #{data}");
+  log("headers: #{headers}");
   let (protocol, code, desc) = status;
+  log("protocol: #{protocol}");
   log("response code: #{code}");
+  log("desc: #{desc}");
 end
-
+#
 live_dj = map_metadata(new_meta, live_dj,update=false)
 live_dj = pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, live_dj)
 
