@@ -24,6 +24,8 @@ tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
 tunein_station_id = getenv("TUNEIN_STATION_ID")
 tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
 
+liq_secret = getenv("LIQ_SECRET")
+
 def icy_update(v) =
   # Parse the argument
   l = string.split(separator=",",v)
@@ -138,8 +140,9 @@ end
 def pub_metadata(m) =
   log("on_track");
   title = m["title"]
-  url = "https://${RADIO_NAME}.streampusher.com/publish_metadata"
-  let (status, headers, data) = http.post(headers=[("Content-Type","application/json"), ("Accept", "application/json")],data="{\"metadata\": \"#{title}\"}", url)
+  url = "https://${radio_name}.streampusher.com/publish_metadata"
+  headers = [("Content-Type","application/json"), ("Accept", "application/json"), ("liq-secret", liq_secret)]
+  let (status, headers, data) = http.post(headers=headers,data="{\"metadata\": \"#{title}\"}", url)
   log("data: #{data}");
   log("headers: #{headers}");
   let (protocol, code, desc) = status;
