@@ -46,13 +46,16 @@ RUN apt-get install -y libpcre3-dev
 
 # install liquidsoap from source
 USER liquidsoap
-RUN cd ~; opam init -y --disable-sandboxing
-RUN cd ~; opam switch create new 4.08.0
+RUN opam init -y --disable-sandboxing
+RUN opam switch create new 4.09.0
+RUN opam update -y
+
+RUN ["/bin/bash", "-c", "ls -lha ~"]
 RUN cd /home/liquidsoap; git clone https://github.com/savonet/liquidsoap-full
 ADD PACKAGES /home/liquidsoap/liquidsoap-full/PACKAGES
-RUN ["/bin/bash", "-c", "ls -lha ~"]
-RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full/liquidsoap; git submodule update --init --remote --recursive;"]
+RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full/; make init && make update;"]
 RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full/liquidsoap; git rev-parse HEAD;"]
+RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full/ocaml-mm; git rev-parse HEAD;"]
 RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full/ocaml-mm; eval `opam config env`; opam pin add . -y;"]
 RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full/liquidsoap; eval `opam config env`; opam pin add . -y;"]
 RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full; ./bootstrap;"]
