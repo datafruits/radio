@@ -142,7 +142,7 @@ def pub_metadata(m) =
   title = m["title"]
   url = "https://${radio_name}.streampusher.com/publish_metadata"
   headers = [("Content-Type","application/json"), ("Accept", "application/json"), ("liq-secret", liq_secret)]
-  let (status, headers, data) = http.post(headers=headers,data="{\"metadata\": \"#{title}\"}", url)
+  let (status, headers, data) = https.post(headers=headers,data="{\"metadata\": \"#{title}\"}", url)
   log("data: #{data}");
   log("headers: #{headers}");
   let (protocol, code, desc) = status;
