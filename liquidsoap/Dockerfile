@@ -1,26 +1,26 @@
-FROM ubuntu:14.04
+FROM ubuntu:19.04
 
 # locale
-RUN locale-gen ja_JP.UTF-8 && \
-    locale-gen en_US.UTF-8
-ENV LANG en_US.UTF-8
+#RUN locale-gen ja_JP.UTF-8 && \
+#    locale-gen en_US.UTF-8
+#ENV LANG en_US.UTF-8
 
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y software-properties-common
-RUN add-apt-repository ppa:avsm/ppa
-RUN apt-get update && apt-get upgrade -y
+# RUN add-apt-repository ppa:avsm/ppa
 
 # for libfaac etc
-RUN apt-add-repository multiverse && sudo apt-get update
+# RUN apt-add-repository multiverse && sudo apt-get update
 
 # for liquidsoap
 RUN apt-get install -y --force-yes build-essential autoconf curl git ocaml ocaml-native-compilers camlp4-extra opam \
   libmad0-dev libtag1-dev libmp3lame-dev libogg-dev libvorbis-dev libfaac-dev libfaad-dev libfdk-aac-dev libflac-dev \
   libmagic-dev \
   pkg-config \
-  wget telnet
+  wget telnet \
+  mccs
 # for ruby
 RUN apt-get install -y --force-yes libssl-dev libreadline-dev
 # sox
@@ -46,9 +46,10 @@ RUN apt-get install -y libpcre3-dev
 
 # install liquidsoap from source
 USER liquidsoap
-RUN opam init -y --disable-sandboxing
+RUN opam init -y --disable-sandboxing --solver=mccs
 RUN opam switch create new 4.09.0
 RUN opam update -y
+RUN opam install ssl -y
 
 RUN ["/bin/bash", "-c", "ls -lha ~"]
 RUN cd /home/liquidsoap; git clone https://github.com/savonet/liquidsoap-full
