@@ -20,7 +20,7 @@ RUN apt-get install -y --force-yes build-essential autoconf curl git ocaml ocaml
   libmagic-dev \
   pkg-config \
   wget telnet \
-  mccs
+  mccs sudo
 # for ruby
 RUN apt-get install -y --force-yes libssl-dev libreadline-dev
 # sox
