@@ -1,4 +1,4 @@
-FROM ubuntu:19.04
+FROM ubuntu:latest
 
 # locale
 #RUN locale-gen ja_JP.UTF-8 && \
@@ -7,15 +7,24 @@ FROM ubuntu:19.04
 
 ENV DEBIAN_FRONTEND noninteractive
 
+RUN rm -rf /etc/apt/sources.list
+RUN echo "deb mirror://mirrors.ubuntu.com/mirrors.txt xenial main restricted universe multiverse" >> /etc/apt/sources.list
+RUN echo "deb mirror://mirrors.ubuntu.com/mirrors.txt xenial-updates main restricted universe multiverse" >> /etc/apt/sources.list
+RUN echo "deb-src mirror://mirrors.ubuntu.com/mirrors.txt xenial-updates main restricted universe multiverse" >> /etc/apt/sources.list
+RUN echo "deb mirror://mirrors.ubuntu.com/mirrors.txt xenial-backports main restricted universe multiverse" >> /etc/apt/sources.list
+RUN echo "deb mirror://mirrors.ubuntu.com/mirrors.txt xenial-security main restricted universe multiverse" >> /etc/apt/sources.list
+
+RUN apt-get clean
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y software-properties-common
 # RUN add-apt-repository ppa:avsm/ppa
+RUN apt-get update && apt-get upgrade -y
 
 # for libfaac etc
 # RUN apt-add-repository multiverse && sudo apt-get update
 
 # for liquidsoap
-RUN apt-get install -y --force-yes build-essential autoconf curl git ocaml ocaml-native-compilers camlp4-extra opam \
+RUN apt-get install -y --allow-unauthenticated build-essential autoconf curl git ocaml ocaml-native-compilers camlp4-extra opam \
   libmad0-dev libtag1-dev libmp3lame-dev libogg-dev libvorbis-dev libfaac-dev libfaad-dev libfdk-aac-dev libflac-dev \
   libmagic-dev \
   pkg-config \
@@ -51,7 +60,7 @@ RUN opam switch create new 4.09.0
 RUN opam update -y
 RUN opam install ssl -y
 
-RUN ["/bin/bash", "-c", "ls -lha ~"]
+# RUN ["/bin/bash", "-c", "ls -lha ~"]
 RUN cd /home/liquidsoap; git clone https://github.com/savonet/liquidsoap-full
 ADD PACKAGES /home/liquidsoap/liquidsoap-full/PACKAGES
 RUN ["/bin/bash", "-c", "cd /home/liquidsoap/liquidsoap-full/; make init && make update;"]
@@ -73,4 +82,4 @@ WORKDIR /home/liquidsoap/radio
 RUN chown 1000:1000 /home/liquidsoap/tracks
 
 EXPOSE 9000
-CMD liquidsoap radio.liq
+CMD /usr/local/bin/liquidsoap radio.liq
