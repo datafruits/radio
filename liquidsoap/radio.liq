@@ -24,7 +24,7 @@ tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
 tunein_station_id = getenv("TUNEIN_STATION_ID")
 tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
 
-liq_secret = getenv("LIQ_SECRET")
+# liq_secret = getenv("LIQ_SECRET")
 
 def icy_update(v) =
   # Parse the argument
@@ -140,17 +140,20 @@ end
 def pub_metadata(m) =
   log("on_track");
   title = m["title"]
-  url = "https://#{radio_name}.streampusher.com/publish_metadata.json"
-  log("url: #{url}")
-  headers = [("Content-Type","application/json"), ("Accept", "application/json"), ("liq-secret", liq_secret)]
-  let (status, headers, data) = https.post(headers=headers,data="{\"metadata\": \"#{title}\"}", url)
-  log("status: #{status}");
-  log("headers: #{headers}");
-  log("data: #{data}");
-  let (protocol, code, desc) = status;
-  log("protocol: #{protocol}");
-  log("response code: #{code}");
-  log("desc: #{desc}");
+  ret = get_process_lines("./pub_metadata.sh '#{title}'")
+  ret = list.hd(default="",ret)
+  log(ret)
+  #url = "https://#{radio_name}.streampusher.com/publish_metadata.json"
+  #log("url: #{url}")
+  # headers = [("Content-Type","application/json"), ("Accept", "application/json"), ("liq-secret", liq_secret)]
+  # let (status, headers, data) = https.post(headers=headers,data="{\"metadata\": \"#{title}\"}", url)
+  # log("status: #{status}");
+  # log("headers: #{headers}");
+  # log("data: #{data}");
+  # let (protocol, code, desc) = status;
+  # log("protocol: #{protocol}");
+  # log("response code: #{code}");
+  # log("desc: #{desc}");
 end
 #
 live_dj = map_metadata(new_meta, live_dj,update=false)
