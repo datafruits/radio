@@ -140,11 +140,13 @@ end
 def pub_metadata(m) =
   log("on_track");
   title = m["title"]
-  url = "https://${radio_name}.streampusher.com/publish_metadata"
+  url = "https://#{radio_name}.streampusher.com/publish_metadata.json"
+  log("url: #{url}")
   headers = [("Content-Type","application/json"), ("Accept", "application/json"), ("liq-secret", liq_secret)]
   let (status, headers, data) = https.post(headers=headers,data="{\"metadata\": \"#{title}\"}", url)
-  log("data: #{data}");
+  log("status: #{status}");
   log("headers: #{headers}");
+  log("data: #{data}");
   let (protocol, code, desc) = status;
   log("protocol: #{protocol}");
   log("response code: #{code}");
