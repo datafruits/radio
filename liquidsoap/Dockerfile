@@ -35,7 +35,7 @@ RUN touch /var/log/liquidsoap.log
 RUN chown liquidsoap:users /var/log/liquidsoap.log
 
 RUN apt-get install -y libpcre3-dev
-# RUN apt-get install -y gdb
+RUN apt-get install -y gdb
 
 # install liquidsoap from source
 USER liquidsoap
@@ -69,5 +69,4 @@ WORKDIR /home/liquidsoap/radio
 RUN chown 1000:1000 /home/liquidsoap/tracks
 
 EXPOSE 9000
-# CMD gdb --args /usr/local/bin/liquidsoap radio.liq
 CMD /usr/local/bin/liquidsoap radio.liq
