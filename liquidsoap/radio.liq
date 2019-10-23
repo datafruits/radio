@@ -24,6 +24,8 @@ tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
 tunein_station_id = getenv("TUNEIN_STATION_ID")
 tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
 
+# liq_secret = getenv("LIQ_SECRET")
+
 def icy_update(v) =
   # Parse the argument
   l = string.split(separator=",",v)
@@ -179,6 +181,25 @@ def new_meta(m) =
   end
 end
 
+def pub_metadata(m) =
+  log("on_track");
+  title = m["title"]
+  ret = get_process_lines("./pub_metadata.sh '#{title}'")
+  ret = list.hd(default="",ret)
+  log(ret)
+  #url = "https://#{radio_name}.streampusher.com/publish_metadata.json"
+  #log("url: #{url}")
+  # headers = [("Content-Type","application/json"), ("Accept", "application/json"), ("liq-secret", liq_secret)]
+  # let (status, headers, data) = https.post(headers=headers,data="{\"metadata\": \"#{title}\"}", url)
+  # log("status: #{status}");
+  # log("headers: #{headers}");
+  # log("data: #{data}");
+  # let (protocol, code, desc) = status;
+  # log("protocol: #{protocol}");
+  # log("response code: #{code}");
+  # log("desc: #{desc}");
+end
+
 live_dj := map_metadata(new_meta, !live_dj,update=false)
 
 live_dj := pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, live_dj)
@@ -187,6 +208,8 @@ source = fallback(id="fallback",track_sensitive=false,
                   [!live_dj,mksafe(backup_playlist)])
 
 source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
+
+source = on_track(pub_metadata, source)
 
 source = server.insert_metadata(id="fallback", source)
 
