@@ -1,5 +1,5 @@
 #!/usr/local/bin/liquidsoap
-#%include "tunein.liq"
+%include "tunein.liq"
 
 set("sandbox.tool","disabled")
 set("log.file",true)
@@ -140,9 +140,11 @@ def on_connect(headers) =
   # if they disconnected over 60 seconds ago, use new filename
   log("current_dj_connected_at: #{!current_dj_connected_at}")
   log("last_dj_disconnected_at: #{!last_dj_disconnected_at}")
-  if ((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) && (!current_dj == !last_dj_disconnected) then
-    log("*****************************************CREATING NEW DUMP***************************************************")
-    current_dump_filename := "#{!current_dj}-#{!current_dj_connected_at}"
+  if ((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) then
+    if (!current_dj == !last_dj_disconnected) then
+      log("*****************************************CREATING NEW DUMP***************************************************")
+      current_dump_filename := "#{!current_dj}-#{!current_dj_connected_at}"
+    end
   else
     log("*****************************************APPENDING TO PREVIOUS DUMP***************************************************")
   end
@@ -155,7 +157,6 @@ end
 def on_disconnect() =
   log("disconnected")
   last_dj_disconnected_at := gettimeofday()
-  last_dj_disconnected :=
   # shutdown source
   title_prefix := ""
   last_dj_disconnected := !current_dj
@@ -202,7 +203,7 @@ end
 
 live_dj := map_metadata(new_meta, !live_dj,update=false)
 
-live_dj := pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, live_dj)
+live_dj := pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, !live_dj)
 
 source = fallback(id="fallback",track_sensitive=false,
                   [!live_dj,mksafe(backup_playlist)])
