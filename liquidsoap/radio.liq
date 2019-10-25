@@ -56,6 +56,16 @@ server.register("update",namespace="metadata",
 # refs
 title_prefix = ref ""
 
+current_dj = ref ""
+last_dj_disconnected = ref ""
+current_dj_connected_at = ref 0.0
+last_dj_disconnected_at = ref 0.0
+current_dump_filename = ref ""
+
+stop_dump_f = ref (fun () -> ())
+
+live_dj = ref empty()
+
 def get_user(user,password) =
   if user == "source" then
     x = string.split(separator=';',password)
@@ -76,6 +86,7 @@ end
 
 #auth function
 def dj_auth(user,password) =
+  log("dj auth")
   u = get_user(user,password)
   p = get_password(user,password)
   ret = get_process_lines("./dj_auth.sh '#{u}' '#{p}' '#{radio_name}'")
@@ -84,15 +95,17 @@ def dj_auth(user,password) =
   #return true to let the client transmit data, or false to tell harbor to decline
   if ret == "true" then
     title_prefix := "LIVE -- #{u}"
+    current_dj := "#{u}"
+    current_dj_connected_at := gettimeofday()
+    log("dj auth succeeded")
+    log("#{current_dj}")
+    log("#{current_dj_connected_at}")
     true
   else
     false
   end
 end
 
-def on_disconnect() =
-  title_prefix := ""
-end
 
 def my_request_function () =
   lines = get_process_lines("./next_song.sh")
@@ -121,12 +134,51 @@ end
 
 backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
 
+def on_connect(headers) =
+  log("on_connect")
+  list.iter(fun(header)-> log("#{fst(header)}: #{snd(header)}"), headers)
+  # if they disconnected over 60 seconds ago, use new filename
+  log("current_dj_connected_at: #{!current_dj_connected_at}")
+  log("last_dj_disconnected_at: #{!last_dj_disconnected_at}")
+  if (!last_dj_disconnected_at == 0.0) then
+    log("*****************************************CREATING NEW DUMP, last_dj_disconnected_at is null***************************************************")
+    current_dump_filename := "#{!current_dj}-#{!current_dj_connected_at}"
+  elsif ((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) then
+    if (!current_dj == !last_dj_disconnected) then
+      log("*****************************************CREATING NEW DUMP***************************************************")
+      current_dump_filename := "#{!current_dj}-#{!current_dj_connected_at}"
+      # log("sending live notification")
+      # ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
+      # ret = list.hd(default="",ret)
+      # log(ret)
+    end
+  else
+    log("*****************************************APPENDING TO PREVIOUS DUMP***************************************************")
+  end
+  # else append to the old file (dont change the current_dump_filename)
+  # last_dj_connected_at := !current_dj_connected_at
+  s = output.file(%mp3, "/home/liquidsoap/tracks/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
+  stop_dump_f := fun () -> source.shutdown(s)
+end
+
+def on_disconnect() =
+  log("disconnected")
+  last_dj_disconnected_at := gettimeofday()
+  # shutdown source
+  title_prefix := ""
+  last_dj_disconnected := !current_dj
+  current_dj := ""
+  f = !stop_dump_f
+  f ()
+end
+
 if crossfade_enabled == "true" then
   output.dummy(fallible=true,crossfade(backup_playlist))
 else
   output.dummy(fallible=true,backup_playlist)
 end
-live_dj = audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
+
+live_dj := audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_connect=on_connect,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
 
 def new_meta(m) =
   if "#{title_prefix}" == "" then
@@ -155,12 +207,13 @@ def pub_metadata(m) =
   # log("response code: #{code}");
   # log("desc: #{desc}");
 end
-#
-live_dj = map_metadata(new_meta, live_dj,update=false)
-live_dj = pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, live_dj)
+
+live_dj := map_metadata(new_meta, !live_dj,update=false)
+
+live_dj := pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, !live_dj)
 
 source = fallback(id="fallback",track_sensitive=false,
-                  [live_dj,mksafe(backup_playlist)])
+                  [!live_dj,mksafe(backup_playlist)])
 
 source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
@@ -168,11 +221,6 @@ source = on_track(pub_metadata, source)
 
 source = server.insert_metadata(id="fallback", source)
 
-
-title = '$(if $(title),"$(title)",\
-         "Emission inconnue")$(if $(artist), \
-         " par  $(artist)") - %m-%d-%Y, %H:%M:%S'
-output.file(%mp3, "/home/liquidsoap/tracks/#{radio_name}-#{title}.mp3", live_dj, fallible=true, reopen_on_metadata=true)
 clock.assign_new(id="vorbis_icecast", [output.icecast(%vorbis,id="icecast",
                                        mount="#{radio_name}.ogg",
                                        host=icecast_host, port=int_of_string(icecast_port), password="hackme",
