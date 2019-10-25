@@ -140,10 +140,17 @@ def on_connect(headers) =
   # if they disconnected over 60 seconds ago, use new filename
   log("current_dj_connected_at: #{!current_dj_connected_at}")
   log("last_dj_disconnected_at: #{!last_dj_disconnected_at}")
-  if ((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) then
+  if (!last_dj_disconnected_at == 0.0) then
+    log("*****************************************CREATING NEW DUMP, last_dj_disconnected_at is null***************************************************")
+    current_dump_filename := "#{!current_dj}-#{!current_dj_connected_at}"
+  elsif ((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) then
     if (!current_dj == !last_dj_disconnected) then
       log("*****************************************CREATING NEW DUMP***************************************************")
       current_dump_filename := "#{!current_dj}-#{!current_dj_connected_at}"
+      # log("sending live notification")
+      # ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
+      # ret = list.hd(default="",ret)
+      # log(ret)
     end
   else
     log("*****************************************APPENDING TO PREVIOUS DUMP***************************************************")
