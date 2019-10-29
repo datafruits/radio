@@ -147,15 +147,13 @@ def on_connect(headers) =
     ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
     log(ret)
-  elsif ((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) then
-    if (!current_dj == !last_dj_disconnected) then
-      log("*****************************************CREATING NEW DUMP***************************************************")
-      current_dump_filename := "#{!current_dj}-#{!current_dj_connected_at}"
-      log("sending live notification")
-      ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
-      ret = list.hd(default="",ret)
-      log(ret)
-    end
+  elsif (((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) or (!current_dj != !last_dj_disconnected)) then
+    log("*****************************************CREATING NEW DUMP***************************************************")
+    current_dump_filename := "#{!current_dj}-#{!current_dj_connected_at}"
+    log("sending live notification")
+    ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
+    ret = list.hd(default="",ret)
+    log(ret)
   else
     log("*****************************************APPENDING TO PREVIOUS DUMP***************************************************")
   end
