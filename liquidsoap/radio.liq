@@ -159,7 +159,7 @@ def on_connect(headers) =
   end
   # else append to the old file (dont change the current_dump_filename)
   # last_dj_connected_at := !current_dj_connected_at
-  s = output.file(%mp3, "/home/liquidsoap/tracks/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
+  s = output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
   stop_dump_f := fun () -> source.shutdown(s)
 end
 
