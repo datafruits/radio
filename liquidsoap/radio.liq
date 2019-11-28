@@ -134,6 +134,11 @@ end
 
 backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
 
+def format_time(~sec,~min,~hour,~mday,~mon,~year,
+                ~wday,~yday,~isdst) =
+  "#{1900+year}-#{mon+1}-#{mday}-#{hour}:#{min}:#{sec}"
+end
+
 def on_connect(headers) =
   log("on_connect")
   list.iter(fun(header)-> log("#{fst(header)}: #{snd(header)}"), headers)
@@ -142,14 +147,14 @@ def on_connect(headers) =
   log("last_dj_disconnected_at: #{!last_dj_disconnected_at}")
   if (!last_dj_disconnected_at == 0.0) then
     log("*****************************************CREATING NEW DUMP, last_dj_disconnected_at is null***************************************************")
-    current_dump_filename := "#{!current_dj}-#{!current_dj_connected_at}"
+    current_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
     log("sending live notification")
     ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
     log(ret)
   elsif (((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) or (!current_dj != !last_dj_disconnected)) then
     log("*****************************************CREATING NEW DUMP***************************************************")
-    current_dump_filename := "#{!current_dj}-#{!current_dj_connected_at}"
+    current_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
     log("sending live notification")
     ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
