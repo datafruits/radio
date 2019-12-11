@@ -163,7 +163,6 @@ def on_connect(headers) =
     log("*****************************************APPENDING TO PREVIOUS DUMP***************************************************")
   end
   # else append to the old file (dont change the current_dump_filename)
-  # last_dj_connected_at := !current_dj_connected_at
   s = output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
   stop_dump_f := fun () -> source.shutdown(s)
 end
@@ -175,6 +174,7 @@ def on_disconnect() =
   title_prefix := ""
   last_dj_disconnected := !current_dj
   current_dj := ""
+  sleep(60.0)
   f = !stop_dump_f
   f ()
 end
