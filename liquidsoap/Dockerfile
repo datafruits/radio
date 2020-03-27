@@ -48,8 +48,8 @@ RUN opam update -y
 RUN opam install depext -y
 
 RUN eval `opam config env`
-RUN sudo opam depext taglib mad lame ogg vorbis cry samplerate ffmpeg liquidsoap -y
-RUN opam install taglib mad lame ogg vorbis cry samplerate ffmpeg liquidsoap -y
+RUN sudo opam depext taglib mad lame ogg vorbis cry samplerate ffmpeg gavl gstreamer liquidsoap -y
+RUN opam install taglib mad lame ogg vorbis cry samplerate ffmpeg gavl gstreamer liquidsoap -y
 
 #RUN ["/bin/bash", "-c", "ls -lha ~"]
 RUN cd /home/liquidsoap; git clone https://github.com/savonet/liquidsoap-full
