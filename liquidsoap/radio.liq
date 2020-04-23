@@ -7,9 +7,9 @@ set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
 set("log.level",4)
 
-#set("server.telnet",true)
-#set("server.socket",true)
-#set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
+set("server.telnet",true)
+set("server.socket",true)
+set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
 
 set("harbor.bind_addrs",["0.0.0.0"])
 
@@ -45,6 +45,9 @@ def icy_update(v) =
   icy.update_metadata(mount="#{radio_name}.mp3",password="hackme",
                       host=icecast_host,meta)
   "Done !"
+end
+
+def clear_queue() =
 end
 
 server.register("update",namespace="metadata",
@@ -215,14 +218,14 @@ def pub_metadata(m) =
   # log("desc: #{desc}");
 end
 
-rtmp_source = audio_to_stereo(drop_video(input.hls("https://vj.datafruits.fm/hls/datafruits.m3u8")))
+hls_source = audio_to_stereo(drop_video((input.hls("https://vj.bluelighttapes.com/hls/datafruits.m3u8"):source(2,1,0))))
 
 live_dj := map_metadata(new_meta, !live_dj,update=false)
 
 live_dj := pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, !live_dj)
 
 source = fallback(id="fallback",track_sensitive=false,
-                  [rtmp_source, !live_dj,mksafe(backup_playlist)])
+                  [hls_source, !live_dj,mksafe(backup_playlist)])
 
 source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
