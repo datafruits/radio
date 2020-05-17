@@ -52,6 +52,19 @@ server.register("update",namespace="metadata",
                  usage="update title=foo,album=bar,..",
                  icy_update)
 
+def add_to_queue(v) =
+  args = string.split(separator=",",v)
+  track = list.hd(args)
+  cue_out = list.hd(list.rev(args))
+  annotate_line = "annotate:liq_fade_in=0,liq_fade_out=0,liq_cue_in=0,liq_cue_out=#{cue_out}:#{track}"
+  request.create(annotate_line)
+  "Created request with annotate_line: #{annotate_line}"
+end
+
+server.register("push",namespace="request",
+                 description="Add a request to the queue",
+                 usage="push track=foo.mp3,cue_out=0",
+                 add_to_queue)
 
 # refs
 title_prefix = ref ""
