@@ -1,5 +1,6 @@
 #!/usr/local/bin/liquidsoap
 %include "tunein.liq"
+%include "pushable.liq"
 
 set("sandbox.tool","disabled")
 set("log.file",true)
@@ -147,7 +148,7 @@ end
 
 backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
 
-scheduled_shows = cue_cut(audio_to_stereo(request.queue.pushable(id="scheduled_shows", timeout=60.0)))
+scheduled_shows = cue_cut(audio_to_stereo(snd(request.queue.pushable(id="scheduled_shows", timeout=60.0))))
 
 def format_time(~sec,~min,~hour,~mday,~mon,~year,
                 ~wday,~yday,~isdst) =
