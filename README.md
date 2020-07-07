@@ -11,6 +11,6 @@ Streampusher will boot liquidsoap using the image `mcfiredrill/liquidsoap:latest
 
 If you'd like to customize that image to develop locally, you can build the image from source using this repo.
 
-`docker build -t mcfiredrill:liquidsoap:latest ./liquidsoap`
+`docker build -t mcfiredrill/liquidsoap:latest ./liquidsoap`
 
 Streampusher should use your new image next time you boot your radio in your development environment.
