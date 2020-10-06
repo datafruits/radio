@@ -62,7 +62,7 @@ current_dj_connected_at = ref 0.0
 last_dj_disconnected_at = ref 0.0
 current_dump_filename = ref ""
 
-recording_sources = ref [("", out(empty()))]
+recording_sources = ref []
 
 live_dj = ref empty()
 
