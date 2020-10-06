@@ -176,7 +176,6 @@ def on_disconnect() =
   current_dj := ""
 
   # shutdown source of last_dj_disconnected dj
-  sleep(60.0)
   def shutdown_sources(dj) =
     if fst(dj) == !last_dj_disconnected then
       log("shutting down #{fst(dj)} source")
