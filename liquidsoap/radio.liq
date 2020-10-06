@@ -177,10 +177,17 @@ def on_disconnect() =
 
   # shutdown source of last_dj_disconnected dj
   sleep(60.0)
+  def shutdown_sources(dj) =
+    if fst(dj) == !last_dj_disconnected then
+      log("shutting down #{fst(dj)} source")
+      source.shutdown(snd(dj))
+    end
+  end
   list.iter(fun(dj)-> log("#{fst(dj)}: #{snd(dj)}"), !recording_sources)
   log("last_dj_disconnected: #{!last_dj_disconnected}")
-  s = list.assoc(!last_dj_disconnected, !recording_sources)
-  source.shutdown(s)
+  list.iter(shutdown_sources, !recording_sources)
+  list.remove_assoc(!last_dj_disconnected, !recording_sources)
+  log("removed #{!last_dj_disconnected} source from recording_sources")
 end
 
 if crossfade_enabled == "true" then
