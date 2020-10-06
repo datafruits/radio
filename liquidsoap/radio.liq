@@ -62,7 +62,7 @@ current_dj_connected_at = ref 0.0
 last_dj_disconnected_at = ref 0.0
 current_dump_filename = ref ""
 
-stop_dump_f = ref (fun () -> ())
+recording_sources = ref [("", out(empty()))]
 
 live_dj = ref empty()
 
@@ -160,23 +160,27 @@ def on_connect(headers) =
     ret = list.hd(default="",ret)
     log(ret)
   else
+    # else append to the old file (dont change the current_dump_filename)
     log("*****************************************APPENDING TO PREVIOUS DUMP***************************************************")
   end
-  # else append to the old file (dont change the current_dump_filename)
+  # add source to assoc list
   s = output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
-  stop_dump_f := fun () -> source.shutdown(s)
+  recording_sources := list.append([("#{!current_dj}", s)], !recording_sources)
 end
 
 def on_disconnect() =
   log("disconnected")
   last_dj_disconnected_at := gettimeofday()
-  # shutdown source
   title_prefix := ""
   last_dj_disconnected := !current_dj
   current_dj := ""
+
+  # shutdown source of last_dj_disconnected dj
   sleep(60.0)
-  f = !stop_dump_f
-  f ()
+  list.iter(fun(dj)-> log("#{fst(dj)}: #{snd(dj)}"), !recording_sources)
+  log("last_dj_disconnected: #{!last_dj_disconnected}")
+  s = list.assoc(!last_dj_disconnected, !recording_sources)
+  source.shutdown(s)
 end
 
 if crossfade_enabled == "true" then
