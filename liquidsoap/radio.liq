@@ -150,10 +150,6 @@ def on_connect(headers) =
   if (!last_dj_disconnected_at == 0.0) then
     log("*****************************************CREATING NEW DUMP, last_dj_disconnected_at is null***************************************************")
     next_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
-    if !current_dump_filename == "" then
-      log("assigning current_dump_filename")
-      current_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
-    end
     log("sending live notification")
     ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
@@ -161,10 +157,6 @@ def on_connect(headers) =
   elsif (((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) or (!current_dj != !last_dj_disconnected)) then
     log("*****************************************CREATING NEW DUMP***************************************************")
     next_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
-    if !current_dump_filename == "" then
-      log("assigning current_dump_filename")
-      current_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
-    end
     log("sending live notification")
     ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
@@ -172,20 +164,12 @@ def on_connect(headers) =
   else
     log("*****************************************APPENDING TO PREVIOUS DUMP***************************************************")
     # else append to the old file (dont change the current_dump_filename)
-    if !current_dump_filename == "" then
-      log("assigning current_dump_filename and next_dump_filename")
-      current_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
-      next_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
-    end
   end
   log("current_dump_filename: #{!current_dump_filename}")
   log("next_dump_filename: #{!next_dump_filename}")
-  # s = output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true, reopen_when=reopen_when)
-  # stop_dump_f := fun () -> source.shutdown(s)
 end
 
 def reopen_when() =
-  # what do i assign to next_file ???
   log("in reopen_when")
   if !current_dump_filename != !next_dump_filename then
     log("current_dump_filename != next_dump_filename !! reassigning current to next...")
@@ -204,9 +188,6 @@ def on_disconnect() =
   last_dj_disconnected := !current_dj
   current_dj := ""
   next_dump_filename := ""
-  # sleep(60.0)
-  # f = !stop_dump_f
-  # f ()
 end
 
 if crossfade_enabled == "true" then
@@ -258,7 +239,7 @@ source = on_track(pub_metadata, source)
 
 source = server.insert_metadata(id="fallback", source)
 
-output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true, reopen_when=reopen_when)
+output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, reopen_when=reopen_when, reopen_delay=0.0)
 
 clock.assign_new(id="vorbis_icecast", [output.icecast(%vorbis,id="icecast",
                                        mount="#{radio_name}.ogg",
