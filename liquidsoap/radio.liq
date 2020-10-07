@@ -7,9 +7,9 @@ set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
 set("log.level",4)
 
-# set("server.telnet",true)
-# set("server.socket",true)
-# set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
+set("server.telnet",true)
+set("server.socket",true)
+set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
 
 set("harbor.bind_addrs",["0.0.0.0"])
 
