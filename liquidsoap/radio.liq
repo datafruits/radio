@@ -170,7 +170,6 @@ def on_connect(headers) =
 end
 
 def reopen_when() =
-  log("in reopen_when")
   if !current_dump_filename != !next_dump_filename then
     log("current_dump_filename != next_dump_filename !! reassigning current to next...")
     current_dump_filename := !next_dump_filename
@@ -240,7 +239,12 @@ source = on_track(pub_metadata, source)
 
 source = server.insert_metadata(id="fallback", source)
 
-output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, reopen_when=reopen_when, reopen_delay=0.0, append=true)
+def current_dump_filename_getter() =
+  log("in current_dump_filename_getter: #{!current_dump_filename}")
+  "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3"
+end
+
+output.file(%mp3, current_dump_filename_getter, !live_dj, fallible=true, reopen_when=reopen_when, reopen_delay=0.0, append=true)
 
 clock.assign_new(id="vorbis_icecast", [output.icecast(%vorbis,id="icecast",
                                        mount="#{radio_name}.ogg",
