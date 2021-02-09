@@ -1,8 +1,11 @@
 FROM archlinux
 
-RUN yes | pacman -Sy opam make m4 gcc patch diffutils ffmpeg git automake autoconf pkg-config which taglib
+RUN yes | pacman -Sy opam make m4 gcc patch diffutils ffmpeg git automake autoconf pkg-config which taglib sudo glibc jq
 
 RUN useradd liquidsoap && mkdir /home/liquidsoap && chown -R liquidsoap /home/liquidsoap
+RUN usermod -aG wheel liquidsoap
+RUN echo "Defaults    !requiretty" >> /etc/sudoers
+RUN echo "%wheel ALL=NOPASSWD: ALL" >> /etc/sudoers
 
 ENV HOME=/home/liquidsoap
 
@@ -19,13 +22,17 @@ WORKDIR /home/liquidsoap
 # RUN echo "%sudo ALL=NOPASSWD: ALL" >> /etc/sudoers
 #RUN echo 'eval "$(opam config env)"' >> /home/liquidsoap/.bashrc
 
-#RUN touch /var/log/liquidsoap.log
-#RUN chown liquidsoap:users /var/log/liquidsoap.log
+RUN sudo touch /var/log/liquidsoap.log
+RUN sudo chown liquidsoap:users /var/log/liquidsoap.log
 
-RUN for i in ocaml-ffmpeg ocaml-dtools ocaml-duppy ocaml-mm ocaml-cry ocaml-taglib liquidsoap; do \
-      cd /home/liquidsoap && git clone https://github.com/savonet/$i && cd $i && opam pin add --yes --no-action .; \
-    done
-RUN opam install --yes liquidsoap ffmpeg cry taglib
+RUN opam install depext -y
+RUN opam depext taglib mad lame ogg vorbis cry samplerate liquidsoap -y
+RUN opam install taglib mad lame ogg vorbis cry samplerate liquidsoap -y
+# RUN for i in ocaml-ffmpeg ocaml-dtools ocaml-duppy ocaml-mm ocaml-cry ocaml-taglib ocaml-lame ocaml-ogg ocaml-vorbis ocaml-samplerate liquidsoap; do \
+#       cd /home/liquidsoap && git clone https://github.com/savonet/$i && cd $i && opam pin add --yes --no-action .; \
+#     done
+# RUN opam install --yes liquidsoap ffmpeg cry taglib lame ogg vorbis samplerate
+RUN eval `opam config env`;liquidsoap --version
 
 RUN mkdir /home/liquidsoap/radio
 ADD ./ /home/liquidsoap/radio/
