@@ -219,6 +219,8 @@ live_dj := map_metadata(new_meta, !live_dj,update=false)
 
 live_dj := pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, !live_dj)
 
+output.dummy(fallible=true, !live_dj)
+
 source = fallback(id="fallback",track_sensitive=false,
                   [!live_dj,mksafe(backup_playlist)])
 
