@@ -148,6 +148,8 @@ def on_connect(headers) =
   if (!last_dj_disconnected_at == 0.0) then
     log("*****************************************CREATING NEW DUMP, last_dj_disconnected_at is null***************************************************")
     current_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
+    log("new dump filename (first dump):")
+    log(!current_dump_filename);
     log("sending live notification")
     ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
@@ -155,6 +157,8 @@ def on_connect(headers) =
   elsif (((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) or (!current_dj != !last_dj_disconnected)) then
     log("*****************************************CREATING NEW DUMP***************************************************")
     current_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
+    log("new dump filename:")
+    log(!current_dump_filename);
     log("sending live notification")
     ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
@@ -164,6 +168,7 @@ def on_connect(headers) =
   end
   # else append to the old file (dont change the current_dump_filename)
   s = output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
+  output.dummy(fallible=true, s)
   stop_dump_f := fun () -> source.shutdown(s)
 end
 
