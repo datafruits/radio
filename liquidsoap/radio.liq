@@ -5,11 +5,11 @@
 set("log.file",true)
 set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
-set("log.level",5)
+set("log.level",3)
 
-#set("server.telnet",true)
-#set("server.socket",true)
-#set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
+set("server.telnet",true)
+set("server.socket",true)
+set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
 
 set("harbor.bind_addrs",["0.0.0.0"])
 
@@ -69,6 +69,8 @@ stop_dump_f = ref (fun () -> ())
 
 live_dj = ref empty()
 live_video_audio = ref empty()
+live_video = ref empty()
+vj_video = ref empty()
 
 def get_user(user,password) =
   if user == "source" then
@@ -136,7 +138,7 @@ def my_request_function () =
   end
 end
 
-backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
+backup_playlist = audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function))
 
 def format_time(~sec,~min,~hour,~mday,~mon,~year,
                 ~wday,~yday,~isdst) =
@@ -219,24 +221,25 @@ def pub_metadata(m) =
   # log("desc: #{desc}");
 end
 
-live_video_audio := audio_to_stereo(drop_video((input.external.ffmpeg(show_command=true, restart_on_error=true, buffer=60.0, max=120.0, "-i http://streampusher.com:1024/dash/datafruits.mpd"))))
-#live_video_audio := audio_to_stereo(drop_video((input.external.ffmpeg(show_command=true, restart_on_error=true, buffer=30.0, max=60.0, "-i http://rtmp:1024/hls/datafruits.m3u8"))))
-#live_video_audio := audio_to_stereo(drop_video((input.external.ffmpeg(show_command=true, restart_on_error=true, buffer=30.0, max=60.0, "-i http://rtmp:1024/dash/datafruits.mpd"))))
-#live_video_audio := audio_to_stereo(drop_video((input.external.ffmpeg(show_command=true, restart_on_error=true, buffer=30.0, max=60.0, "-i https://vj.bluelighttapes.com/hls/datafruits.m3u8"))))
+live_video := input.external.ffmpeg(show_command=true, restart_on_error=true, buffer=60.0, max=120.0, "-i https://viz.streampusher.com:16666/hls/datafruits.m3u8")
+vj_video := input.external.ffmpeg(show_command=true, restart_on_error=true, buffer=60.0, max=120.0, "-i https://viz.streampusher.com:16666/vj/datafruits.m3u8")
 
-#live_video = audio_to_stereo(drop_audio(input.external.ffmpeg("https://vj.bluelighttapes.com/hls/datafruits.m3u8")))
-
-#vj_video_only = drop_audio((input.external.ffmpeg("https://vj.bluelighttapes.com/hls/datafruits.m3u8"):source(2,1,0)))
+live_video_audio := audio_to_stereo(drop_video(!live_video))
 
 live_dj := map_metadata(new_meta, !live_dj,update=false)
 
-live_dj := pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, !live_dj)
-live_video_audio := pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, !live_video_audio)
+live_audio = fallback(id="live_audio_fallback", track_sensitive=false, [!live_video_audio, !live_dj])
+live_audio = pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, live_audio)
 
 source = fallback(id="fallback",track_sensitive=false,
                   [!live_video_audio, !live_dj, mksafe(backup_playlist)])
 
-#video_source = fallback([live_video, vj_video])
+single_video = noise()
+
+video_source = fallback(id="video_fallback",track_sensitive=false,
+                        [!live_video,
+                         mux_audio(drop_audio(!vj_video), audio=source),
+                         mux_audio(single_video, audio=source)])
 
 source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
@@ -257,4 +260,7 @@ clock.assign_new(id="mp3_icecast", [output.icecast(%mp3,id="icecast",
                                     url="", encoding="UTF-8",
                                     mksafe(buffer(source)))])
 
-# output.external.ffmpeg
+output.file.hls.ffmpeg(playlist="#{radio_name}.m3u8",
+                directory="/home/liquidsoap/hls",
+                fallible=true,
+                video_source)
