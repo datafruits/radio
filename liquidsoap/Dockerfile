@@ -26,8 +26,8 @@ RUN sudo touch /var/log/liquidsoap.log
 RUN sudo chown liquidsoap:users /var/log/liquidsoap.log
 
 RUN opam install depext -y
-RUN opam depext taglib mad lame ogg vorbis cry samplerate liquidsoap -y
-RUN opam install taglib mad lame ogg vorbis cry samplerate liquidsoap -y
+RUN opam depext gavl ffmpeg taglib mad lame ogg vorbis cry samplerate liquidsoap -y
+RUN opam install gavl ffmpeg taglib mad lame ogg vorbis cry samplerate liquidsoap -y
 # RUN for i in ocaml-ffmpeg ocaml-dtools ocaml-duppy ocaml-mm ocaml-cry ocaml-taglib ocaml-lame ocaml-ogg ocaml-vorbis ocaml-samplerate liquidsoap; do \
 #       cd /home/liquidsoap && git clone https://github.com/savonet/$i && cd $i && opam pin add --yes --no-action .; \
 #     done
@@ -40,10 +40,13 @@ RUN mkdir /home/liquidsoap/tracks
 RUN chown liquidsoap:liquidsoap /home/liquidsoap/tracks
 RUN mkdir /home/liquidsoap/recordings
 RUN chown liquidsoap:liquidsoap /home/liquidsoap/recordings
+RUN mkdir /home/liquidsoap/hls
+RUN chown liquidsoap:liquidsoap /home/liquidsoap/hls
 
 WORKDIR /home/liquidsoap/radio
 RUN chown 1000:1000 /home/liquidsoap/tracks
 RUN chown 1000:1000 /home/liquidsoap/recordings
+RUN chown 1000:1000 /home/liquidsoap/hls
 
 EXPOSE 9000
-CMD ["/bin/bash", "-c", "eval `opam config env`; liquidsoap radio.liq"]
+CMD ["/bin/bash", "-c", "eval `opam config env` && liquidsoap radio.liq"]

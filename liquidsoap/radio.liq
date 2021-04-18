@@ -1,11 +1,11 @@
 #!/usr/local/bin/liquidsoap
 %include "tunein.liq"
 
-set("sandbox.tool","disabled")
+#set("sandbox.tool","disabled")
 set("log.file",true)
 set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
-set("log.level",4)
+set("log.level",3)
 
 set("server.telnet",true)
 set("server.socket",true)
@@ -25,7 +25,7 @@ tunein_station_id = getenv("TUNEIN_STATION_ID")
 tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
 
 # liq_secret = getenv("LIQ_SECRET")
-
+#
 def icy_update(v) =
   # Parse the argument
   l = string.split(separator=",",v)
@@ -47,6 +47,9 @@ def icy_update(v) =
   "Done !"
 end
 
+# def clear_queue() =
+# end
+
 server.register("update",namespace="metadata",
                  description="Update metadata",
                  usage="update title=foo,album=bar,..",
@@ -65,6 +68,9 @@ current_dump_filename = ref ""
 stop_dump_f = ref (fun () -> ())
 
 live_dj = ref empty()
+live_video_audio = ref empty()
+live_video = ref empty()
+vj_video = ref empty()
 
 def dj_dummy_started() =
   log("dj dummy on_start")
@@ -227,14 +233,27 @@ def pub_metadata(m) =
   # log("desc: #{desc}");
 end
 
+live_video := input.external.ffmpeg(show_command=true, restart_on_error=true, buffer=60.0, max=120.0, "-i https://viz.streampusher.com:16666/hls/datafruits.m3u8")
+vj_video := input.external.ffmpeg(show_command=true, restart_on_error=true, buffer=60.0, max=120.0, "-i https://viz.streampusher.com:16666/vj/datafruits.m3u8")
+
+live_video_audio := audio_to_stereo(drop_video(!live_video))
+
 live_dj := map_metadata(new_meta, !live_dj,update=false)
 
-live_dj := pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, !live_dj)
+live_audio = fallback(id="live_audio_fallback", track_sensitive=false, [!live_video_audio, !live_dj])
+live_audio = pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, live_audio)
 
 output.dummy(fallible=true, on_start=dj_dummy_started, on_stop=dj_dummy_stopped, !live_dj)
 
 source = fallback(id="fallback",track_sensitive=false,
-                  [!live_dj,mksafe(backup_playlist)])
+                  [!live_video_audio, !live_dj, mksafe(backup_playlist)])
+
+single_video = noise()
+
+video_source = fallback(id="video_fallback",track_sensitive=false,
+                        [!live_video,
+                         mux_audio(drop_audio(!vj_video), audio=source),
+                         mux_audio(single_video, audio=source)])
 
 source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
@@ -254,3 +273,8 @@ clock.assign_new(id="mp3_icecast", [output.icecast(%mp3,id="icecast",
                                     icy_metadata="true",description="",
                                     url="", encoding="UTF-8",
                                     mksafe(buffer(source)))])
+
+output.file.hls.ffmpeg(playlist="#{radio_name}.m3u8",
+                directory="/home/liquidsoap/hls",
+                fallible=true,
+                video_source)
