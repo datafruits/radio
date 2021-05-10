@@ -38,7 +38,7 @@ ocaml-cry
 # Gstreamer is a library for constructing graphs of media-handling components.
 # It is currently used to provide audio and video encoding and decoding
 # as well as input and outputs such as V4l inputs.
-# ocaml-gstreamer
+ocaml-gstreamer
 
 # ============================================================================
 # Codecs
@@ -117,11 +117,11 @@ ocaml-flac
 # is very efficient and has a quality setting for
 # tweaking load vs. quality of the conversion.
 # It is the recommended module to use with video
-# ocaml-gavl
+ocaml-gavl
 
 # FFMPEG is currently only used to convert from
 # and to many formats.
-# ocaml-ffmpeg
+ocaml-ffmpeg
 
 # Frei0r is a minimalistic plugin API for video sources and filters.
 # ocaml-frei0r
