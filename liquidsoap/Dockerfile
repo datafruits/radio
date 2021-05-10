@@ -25,13 +25,23 @@ WORKDIR /home/liquidsoap
 RUN sudo touch /var/log/liquidsoap.log
 RUN sudo chown liquidsoap:users /var/log/liquidsoap.log
 
-RUN opam install depext -y
-RUN opam depext gavl ffmpeg taglib mad lame ogg vorbis cry samplerate liquidsoap -y
-RUN opam install gavl ffmpeg taglib mad lame ogg vorbis cry samplerate liquidsoap -y
+#RUN opam install depext -y
+#RUN opam depext gavl ffmpeg taglib mad lame ogg vorbis cry samplerate liquidsoap -y
+#RUN opam install gavl ffmpeg taglib mad lame ogg vorbis cry samplerate liquidsoap -y
 # RUN for i in ocaml-ffmpeg ocaml-dtools ocaml-duppy ocaml-mm ocaml-cry ocaml-taglib ocaml-lame ocaml-ogg ocaml-vorbis ocaml-samplerate liquidsoap; do \
 #       cd /home/liquidsoap && git clone https://github.com/savonet/$i && cd $i && opam pin add --yes --no-action .; \
 #     done
 # RUN opam install --yes liquidsoap ffmpeg cry taglib lame ogg vorbis samplerate
+# RUN opam install depext -y
+# RUN opam depext taglib mad lame ogg vorbis cry samplerate liquidsoap -y
+# RUN opam install taglib mad lame ogg vorbis cry samplerate liquidsoap -y
+
+RUN for i in ocaml-gavl ocaml-ffmpeg ocaml-dtools ocaml-duppy ocaml-mm ocaml-cry ocaml-taglib ocaml-lame ocaml-ogg ocaml-vorbis ocaml-samplerate; do \
+  cd /home/liquidsoap && git clone https://github.com/savonet/$i && cd $i && opam pin add --yes --no-action .; \
+done
+RUN cd /home/liquidsoap && git clone https://github.com/savonet/liquidsoap && cd liquidsoap && git checkout v2.0.0-alpha1 && opam pin add --yes --no-action .
+RUN opam install --yes liquidsoap ffmpeg cry taglib lame ogg vorbis samplerate
+
 RUN eval `opam config env`;liquidsoap --version
 
 RUN mkdir /home/liquidsoap/radio

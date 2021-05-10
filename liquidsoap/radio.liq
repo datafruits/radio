@@ -1,5 +1,5 @@
 #!/usr/local/bin/liquidsoap
-%include "tunein.liq"
+# %include "tunein.liq"
 
 #set("sandbox.tool","disabled")
 set("log.file",true)
@@ -19,10 +19,10 @@ icecast_host = "icecast"
 icecast_port = "8000"
 crossfade_enabled = getenv("CROSSFADE")
 
-tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
-tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
-tunein_station_id = getenv("TUNEIN_STATION_ID")
-tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
+# tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
+# tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
+# tunein_station_id = getenv("TUNEIN_STATION_ID")
+# tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
 
 # liq_secret = getenv("LIQ_SECRET")
 #
@@ -57,20 +57,20 @@ server.register("update",namespace="metadata",
 
 
 # refs
-title_prefix = ref ""
+title_prefix = ref("")
 
-current_dj = ref ""
-last_dj_disconnected = ref ""
-current_dj_connected_at = ref 0.0
-last_dj_disconnected_at = ref 0.0
-current_dump_filename = ref ""
+current_dj = ref("")
+last_dj_disconnected = ref("")
+current_dj_connected_at = ref(0.0)
+last_dj_disconnected_at = ref(0.0)
+current_dump_filename = ref("")
 
-stop_dump_f = ref (fun () -> ())
+stop_dump_f = ref(fun () -> ())
 
-live_dj = ref empty()
-live_video_audio = ref empty()
-live_video = ref empty()
-vj_video = ref empty()
+live_dj = ref(empty())
+live_video_audio = ref(empty())
+live_video = ref(empty())
+vj_video = ref(empty())
 
 def dj_dummy_started() =
   log("dj dummy on_start")
@@ -115,7 +115,7 @@ def dj_auth(user,password) =
   if ret == "true" then
     title_prefix := "LIVE -- #{u}"
     current_dj := "#{u}"
-    current_dj_connected_at := gettimeofday()
+    current_dj_connected_at := time()
     log("dj auth succeeded")
     log("#{current_dj}")
     log("#{current_dj_connected_at}")
@@ -164,7 +164,7 @@ def on_connect(headers) =
   log("last_dj_disconnected_at: #{!last_dj_disconnected_at}")
   if (!last_dj_disconnected_at == 0.0) then
     log("*****************************************CREATING NEW DUMP, last_dj_disconnected_at is null***************************************************")
-    current_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
+    current_dump_filename := "#{!current_dj}-#{time.local(!current_dj_connected_at)}"
     log("new dump filename (first dump):")
     log(!current_dump_filename);
     log("sending live notification")
@@ -173,7 +173,7 @@ def on_connect(headers) =
     log(ret)
   elsif (((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) or (!current_dj != !last_dj_disconnected)) then
     log("*****************************************CREATING NEW DUMP***************************************************")
-    current_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
+    current_dump_filename := "#{!current_dj}-#{time.local(!current_dj_connected_at)}"
     log("new dump filename:")
     log(!current_dump_filename);
     log("sending live notification")
@@ -233,15 +233,15 @@ def pub_metadata(m) =
   # log("desc: #{desc}");
 end
 
-live_video := input.external.ffmpeg(show_command=true, restart_on_error=true, buffer=60.0, max=120.0, "-i https://viz.streampusher.com:16666/hls/datafruits.m3u8")
-vj_video := input.external.ffmpeg(show_command=true, restart_on_error=true, buffer=60.0, max=120.0, "-i https://viz.streampusher.com:16666/vj/datafruits.m3u8")
+live_video := input.ffmpeg(fallible=true, buffer=60.0, "https://viz.streampusher.com:16666/hls/datafruits.m3u8")
+vj_video := input.ffmpeg(fallible=true, buffer=60.0, "https://viz.streampusher.com:16666/vj/datafruits.m3u8")
 
 live_video_audio := audio_to_stereo(drop_video(!live_video))
 
 live_dj := map_metadata(new_meta, !live_dj,update=false)
 
-live_audio = fallback(id="live_audio_fallback", track_sensitive=false, [!live_video_audio, !live_dj])
-live_audio = pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, live_audio)
+# live_audio = fallback(id="live_audio_fallback", track_sensitive=false, [!live_video_audio, !live_dj])
+# live_audio = pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, live_audio)
 
 output.dummy(fallible=true, on_start=dj_dummy_started, on_stop=dj_dummy_stopped, !live_dj)
 
@@ -255,9 +255,9 @@ video_source = fallback(id="video_fallback",track_sensitive=false,
                          mux_audio(drop_audio(!vj_video), audio=source),
                          mux_audio(single_video, audio=source)])
 
-source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
+#source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
-source = on_track(pub_metadata, source)
+source.on_track(pub_metadata)
 
 source = server.insert_metadata(id="fallback", source)
 
@@ -274,7 +274,45 @@ clock.assign_new(id="mp3_icecast", [output.icecast(%mp3,id="icecast",
                                     url="", encoding="UTF-8",
                                     mksafe(buffer(source)))])
 
-output.file.hls.ffmpeg(playlist="#{radio_name}.m3u8",
-                directory="/home/liquidsoap/hls",
-                fallible=true,
+aac_lofi = %ffmpeg(format="mpegts",
+                   %audio(
+                     codec="aac",
+                     channels=2,
+                     ar=44100
+                   ))
+
+aac_midfi = %ffmpeg(format="mpegts",
+                  %audio(
+                    codec="aac",
+                    channels=2,
+                    ar=44100,
+                    b="96k"
+                  ))
+
+aac_hifi = %ffmpeg(format="mpegts",
+                   %audio(
+                     codec="aac",
+                     channels=2,
+                     ar=44100,
+                     b="192k"
+                   ))
+
+streams = [("aac_lofi",aac_lofi),
+           ("aac_midfi", aac_midfi),
+           ("aac_hifi", aac_hifi)]
+
+def segment_name(~position,~extname,stream_name) =
+  timestamp = int_of_float(gettimeofday())
+  duration = 2
+  "#{stream_name}_#{duration}_#{timestamp}_#{position}.#{extname}"
+end
+
+output.file.hls(playlist="#{radio_name}.m3u8",
+                segment_duration=2.0,
+                segments=5,
+                segments_overhead=5,
+                segment_name=segment_name,
+                persist_at="/home/liquidsoap/state.config",
+                "/home/liquidsoap/hls",
+                streams,
                 video_source)
