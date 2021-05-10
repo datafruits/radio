@@ -253,7 +253,7 @@ single_video = noise()
 video_source = fallback(id="video_fallback",track_sensitive=false,
                         [!live_video,
                          mux_audio(drop_audio(!vj_video), audio=source),
-                         mux_audio(single_video, audio=source)])
+                         mksafe(mux_audio(single_video, audio=source))])
 
 #source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
