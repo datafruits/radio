@@ -233,8 +233,8 @@ def pub_metadata(m) =
   # log("desc: #{desc}");
 end
 
-live_video := input.ffmpeg(fallible=true, buffer=60.0, "https://viz.streampusher.com:16666/hls/datafruits.m3u8")
-vj_video := input.ffmpeg(fallible=true, buffer=60.0, "https://viz.streampusher.com:16666/vj/datafruits.m3u8")
+live_video := input.ffmpeg(id="main_video", fallible=true, buffer=60.0, "https://viz.streampusher.com:16666/hls/datafruits.m3u8")
+vj_video := input.ffmpeg(id="vj_video", fallible=true, buffer=60.0, "https://viz.streampusher.com:16666/vj/datafruits.m3u8")
 
 live_video_audio := audio_to_stereo(drop_video(!live_video))
 
@@ -279,7 +279,12 @@ aac_lofi = %ffmpeg(format="mpegts",
                      codec="aac",
                      channels=2,
                      ar=44100
-                   ))
+                   ),
+                    %video(
+                      codec="libx264",
+                      b="5M"
+                    )
+                   )
 
 aac_midfi = %ffmpeg(format="mpegts",
                   %audio(
@@ -287,7 +292,12 @@ aac_midfi = %ffmpeg(format="mpegts",
                     channels=2,
                     ar=44100,
                     b="96k"
-                  ))
+                  ),
+                    %video(
+                      codec="libx264",
+                      b="5M"
+                    )
+                  )
 
 aac_hifi = %ffmpeg(format="mpegts",
                    %audio(
@@ -295,14 +305,19 @@ aac_hifi = %ffmpeg(format="mpegts",
                      channels=2,
                      ar=44100,
                      b="192k"
-                   ))
+                   ),
+                    %video(
+                      codec="libx264",
+                      b="5M"
+                    )
+                   )
 
 streams = [("aac_lofi",aac_lofi),
            ("aac_midfi", aac_midfi),
            ("aac_hifi", aac_hifi)]
 
 def segment_name(~position,~extname,stream_name) =
-  timestamp = int_of_float(gettimeofday())
+  timestamp = int_of_float(time())
   duration = 2
   "#{stream_name}_#{duration}_#{timestamp}_#{position}.#{extname}"
 end
