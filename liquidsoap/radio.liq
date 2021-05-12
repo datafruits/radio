@@ -104,11 +104,11 @@ def get_password(user,password) =
 end
 
 #auth function
-def dj_auth(user,password) =
+def dj_auth(user,password,address) =
   log("dj auth")
   u = get_user(user,password)
   p = get_password(user,password)
-  ret = get_process_lines("./dj_auth.sh '#{u}' '#{p}' '#{radio_name}'")
+  ret = process.read.lines("./dj_auth.sh '#{u}' '#{p}' '#{radio_name}'")
   #ret has now the value of the live client (dj1,dj2, or djx), or "ERROR"/"unknown"
   ret = list.hd(default="",ret)
   #return true to let the client transmit data, or false to tell harbor to decline
@@ -127,7 +127,7 @@ end
 
 
 def my_request_function () =
-  lines = get_process_lines("./next_song.sh")
+  lines = process.read.lines("./next_song.sh")
   result = list.hd(default="", lines)
   log("result: #{result}")
   log("lines: #{lines}")
@@ -168,7 +168,7 @@ def on_connect(headers) =
     log("new dump filename (first dump):")
     log(!current_dump_filename);
     log("sending live notification")
-    ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
+    ret = process.read.lines("./live_notification.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
     log(ret)
   elsif (((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) or (!current_dj != !last_dj_disconnected)) then
@@ -177,7 +177,7 @@ def on_connect(headers) =
     log("new dump filename:")
     log(!current_dump_filename);
     log("sending live notification")
-    ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
+    ret = process.read.lines("./live_notification.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
     log(ret)
   else
@@ -217,7 +217,7 @@ end
 def pub_metadata(m) =
   log("on_track");
   title = m["title"]
-  ret = get_process_lines("./pub_metadata.sh '#{title}'")
+  ret = process.read.lines("./pub_metadata.sh '#{title}'")
   ret = list.hd(default="",ret)
   log(ret)
   #url = "https://#{radio_name}.streampusher.com/publish_metadata.json"
