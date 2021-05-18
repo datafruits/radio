@@ -1,55 +1,38 @@
-FROM ubuntu:latest
+FROM archlinux
 
-RUN rm -rf /etc/apt/sources.list
-RUN echo "deb mirror://mirrors.ubuntu.com/mirrors.txt bionic main restricted universe multiverse" >> /etc/apt/sources.list
-RUN echo "deb mirror://mirrors.ubuntu.com/mirrors.txt bionic-updates main restricted universe multiverse" >> /etc/apt/sources.list
-RUN echo "deb-src mirror://mirrors.ubuntu.com/mirrors.txt bionic-updates main restricted universe multiverse" >> /etc/apt/sources.list
-RUN echo "deb mirror://mirrors.ubuntu.com/mirrors.txt bionic-backports main restricted universe multiverse" >> /etc/apt/sources.list
-RUN echo "deb mirror://mirrors.ubuntu.com/mirrors.txt bionic-security main restricted universe multiverse" >> /etc/apt/sources.list
+RUN yes | pacman -Sy opam make m4 gcc patch diffutils ffmpeg git automake autoconf pkg-config which taglib sudo glibc jq
 
-RUN apt-get clean
-RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y software-properties-common
-RUN add-apt-repository ppa:avsm/ppa
-RUN apt-get update && apt-get upgrade -y
-
-# for liquidsoap
-RUN apt-get install -y --allow-unauthenticated build-essential autoconf curl git ocaml ocaml-native-compilers camlp4-extra opam \
-  libmad0-dev libtag1-dev libmp3lame-dev libogg-dev libvorbis-dev libfaac-dev libfaad-dev libfdk-aac-dev libflac-dev \
-  libmagic-dev \
-  pkg-config \
-  wget telnet \
-  mccs sudo
-# for ruby
-RUN apt-get install -y --force-yes libssl-dev libreadline-dev
-
-# jq
-RUN apt-get install -y --force-yes jq
-
-RUN apt-get clean
-
-# add liquidsoap user
-RUN useradd --create-home -s /bin/bash liquidsoap ;\
-  adduser liquidsoap sudo
+RUN useradd liquidsoap && mkdir /home/liquidsoap && chown -R liquidsoap /home/liquidsoap
+RUN usermod -aG wheel liquidsoap
 RUN echo "Defaults    !requiretty" >> /etc/sudoers
-RUN echo "%sudo ALL=NOPASSWD: ALL" >> /etc/sudoers
-RUN echo 'eval "$(opam config env)"' >> /home/liquidsoap/.bashrc
+RUN echo "%wheel ALL=NOPASSWD: ALL" >> /etc/sudoers
 
-RUN touch /var/log/liquidsoap.log
-RUN chown liquidsoap:users /var/log/liquidsoap.log
-
-RUN apt-get install -y libpcre3-dev
-RUN apt-get install -y gdb
+ENV HOME=/home/liquidsoap
 
 USER liquidsoap
-RUN opam init -y --disable-sandboxing --solver=mccs
-RUN opam switch create new 4.09.0
-RUN opam update -y
-RUN opam install depext -y
 
-RUN eval `opam config env`
-RUN sudo opam depext taglib mad lame ogg vorbis cry samplerate liquidsoap -y
+RUN opam init --disable-sandboxing --yes
+
+WORKDIR /home/liquidsoap
+
+# add liquidsoap user
+#RUN useradd --create-home -s /bin/bash liquidsoap
+#   usermod -a -G sudo liquidsoap
+# RUN echo "Defaults    !requiretty" >> /etc/sudoers
+# RUN echo "%sudo ALL=NOPASSWD: ALL" >> /etc/sudoers
+#RUN echo 'eval "$(opam config env)"' >> /home/liquidsoap/.bashrc
+
+RUN sudo touch /var/log/liquidsoap.log
+RUN sudo chown liquidsoap:users /var/log/liquidsoap.log
+
+RUN opam install depext -y
+RUN opam depext taglib mad lame ogg vorbis cry samplerate liquidsoap -y
 RUN opam install taglib mad lame ogg vorbis cry samplerate liquidsoap -y
+# RUN for i in ocaml-ffmpeg ocaml-dtools ocaml-duppy ocaml-mm ocaml-cry ocaml-taglib ocaml-lame ocaml-ogg ocaml-vorbis ocaml-samplerate liquidsoap; do \
+#       cd /home/liquidsoap && git clone https://github.com/savonet/$i && cd $i && opam pin add --yes --no-action .; \
+#     done
+# RUN opam install --yes liquidsoap ffmpeg cry taglib lame ogg vorbis samplerate
+RUN eval `opam config env`;liquidsoap --version
 
 RUN mkdir /home/liquidsoap/radio
 ADD ./ /home/liquidsoap/radio/
