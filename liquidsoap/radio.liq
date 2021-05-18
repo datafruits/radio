@@ -104,10 +104,10 @@ def get_password(user,password) =
 end
 
 #auth function
-def dj_auth(user,password,address) =
+def dj_auth(args) =
   log("dj auth")
-  u = get_user(user,password)
-  p = get_password(user,password)
+  u = get_user(args.user, args.password)
+  p = get_password(args.user, args.password)
   ret = process.read.lines("./dj_auth.sh '#{u}' '#{p}' '#{radio_name}'")
   #ret has now the value of the live client (dj1,dj2, or djx), or "ERROR"/"unknown"
   ret = list.hd(default="",ret)
