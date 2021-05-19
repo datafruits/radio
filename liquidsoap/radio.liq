@@ -207,7 +207,7 @@ def on_disconnect() =
   current_dj := ""
 end
 
-backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
+# backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
 
 if crossfade_enabled == "true" then
   output.dummy(fallible=true,crossfade(backup_playlist))
