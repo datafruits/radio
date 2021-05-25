@@ -230,7 +230,7 @@ end
 
 live_dj := map_metadata(new_meta, !live_dj,update=false)
 
-live_dj := pipe(process="./stereo_tool_cmd_64 - - -s ./stereotool.sts -k '${stereo_tool_key}'", buffer=10.0, replay_delay=10.0, !live_dj)
+live_dj := pipe(process="./stereo_tool_cmd_64 - - -s ./stereotool.sts -k '#{stereo_tool_key}'", buffer=10.0, replay_delay=10.0, !live_dj)
 
 output.dummy(fallible=true, on_start=dj_dummy_started, on_stop=dj_dummy_stopped, !live_dj)
 
