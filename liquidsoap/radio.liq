@@ -5,7 +5,7 @@ set("sandbox.tool","disabled")
 set("log.file",true)
 set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
-set("log.level",5)
+set("log.level",3)
 
 set("server.telnet",true)
 set("server.socket",true)
