@@ -52,21 +52,6 @@ server.register("update",namespace="metadata",
                  description="Update metadata",
                  usage="update title=foo,album=bar,..",
                  icy_update)
-
-# def add_to_queue(v) =
-#   args = string.split(separator=",",v)
-#   track = list.hd(args)
-#   cue_out = list.hd(list.rev(args))
-#   annotate_line = "annotate:liq_fade_in=0,liq_fade_out=0,liq_cue_in=0,liq_cue_out=#{cue_out}:#{track}"
-#   ignore(request.create(annotate_line))
-#   "Created request with annotate_line: #{annotate_line}"
-# end
-#
-# server.register("push",namespace="request",
-#                  description="Add a request to the queue",
-#                  usage="push track=foo.mp3,cue_out=0",
-#                  add_to_queue)
-
 # refs
 title_prefix = ref ""
 
@@ -252,7 +237,7 @@ live_dj := pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=1
 output.dummy(fallible=true, on_start=dj_dummy_started, on_stop=dj_dummy_stopped, !live_dj)
 
 source = fallback(id="fallback",track_sensitive=false,
-                  [!live_dj,mksafe(scheduled_shows),mksafe(backup_playlist)])
+                  [!live_dj,scheduled_shows,mksafe(backup_playlist)])
 
 source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
