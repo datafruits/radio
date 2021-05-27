@@ -144,7 +144,7 @@ def my_request_function () =
   end
 end
 
-backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
+backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="backup_playlist", timeout=60.0, my_request_function)))
 
 scheduled_shows = cue_cut(audio_to_stereo(snd(request.queue.pushable(id="scheduled_shows", timeout=60.0))))
 

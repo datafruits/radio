@@ -23,12 +23,21 @@ def request.queue.pushable(~id="", ~conservative=false, ~default_duration=30., ~
       "OK"
     end
     server.register(namespace=namespace, description="Push a new request in the queue.", usage="push <uri>", "push", push)
-    # def show_queue(_) =
+    # def show_queue() =
     #   string.concat(separator=" ", list.map(fun (r) -> string_of(request.id(r)), !queue))
     # end
     # server.register(namespace=namespace, description="Display current queue content.", usage="queue", "queue", show_queue)
     def skip(_) = source.skip(s); "Done." end
     server.register(namespace=namespace, description="Skip current song.", usage="skip", "skip", skip)
+
+    def is_ready(_) =
+      "#{source.is_ready(s)}"
+    end
+    server.register(namespace=namespace, description="Is source ready?", usage="is_ready", "is_ready", is_ready)
+    def is_up(_) =
+      "#{source.is_up(s)}"
+    end
+    server.register(namespace=namespace, description="Is source up?", usage="is_up", "is_up", is_up)
   end
   (push, s)
 end
