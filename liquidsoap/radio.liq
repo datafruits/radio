@@ -6,7 +6,7 @@ set("sandbox.tool","disabled")
 set("log.file",true)
 set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
-set("log.level",4)
+set("log.level",3)
 
 set("server.telnet",true)
 set("server.socket",true)
@@ -24,6 +24,7 @@ tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
 tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
 tunein_station_id = getenv("TUNEIN_STATION_ID")
 tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
+stereo_tool_key = getenv("STEREO_TOOL_KEY")
 
 # liq_secret = getenv("LIQ_SECRET")
 
@@ -232,7 +233,7 @@ end
 
 live_dj := map_metadata(new_meta, !live_dj,update=false)
 
-live_dj := pipe(process='./stereo_tool_cmd_64 - - -s ./stereotool.sts', buffer=10.0, !live_dj)
+live_dj := pipe(process="./stereo_tool_cmd_64 - - -s ./stereotool.sts -k '#{stereo_tool_key}'", buffer=10.0, replay_delay=10.0, !live_dj)
 
 output.dummy(fallible=true, on_start=dj_dummy_started, on_stop=dj_dummy_stopped, !live_dj)
 
