@@ -1,5 +1,6 @@
 #!/usr/local/bin/liquidsoap
 %include "tunein.liq"
+%include "pushable.liq"
 
 set("sandbox.tool","disabled")
 set("log.file",true)
@@ -52,8 +53,6 @@ server.register("update",namespace="metadata",
                  description="Update metadata",
                  usage="update title=foo,album=bar,..",
                  icy_update)
-
-
 # refs
 title_prefix = ref ""
 
@@ -146,6 +145,10 @@ def my_request_function () =
   end
 end
 
+backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="backup_playlist", timeout=60.0, my_request_function)))
+
+scheduled_shows = cue_cut(audio_to_stereo(snd(request.queue.pushable(id="scheduled_shows", timeout=60.0))))
+
 def format_time(~sec,~min,~hour,~mday,~mon,~year,
                 ~wday,~yday,~isdst) =
   "#{1900+year}-#{mon+1}-#{mday}-#{hour}:#{min}:#{sec}"
@@ -190,7 +193,7 @@ def on_disconnect() =
   current_dj := ""
 end
 
-backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
+# backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
 
 if crossfade_enabled == "true" then
   output.dummy(fallible=true,crossfade(backup_playlist))
@@ -235,7 +238,7 @@ live_dj := pipe(process="./stereo_tool_cmd_64 - - -s ./stereotool.sts -k '#{ster
 output.dummy(fallible=true, on_start=dj_dummy_started, on_stop=dj_dummy_stopped, !live_dj)
 
 source = fallback(id="fallback",track_sensitive=false,
-                  [!live_dj,mksafe(backup_playlist)])
+                  [!live_dj,scheduled_shows,mksafe(backup_playlist)])
 
 source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
