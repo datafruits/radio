@@ -40,7 +40,8 @@ RUN sudo chown liquidsoap:users /var/log/liquidsoap.log
 RUN for i in ocaml-gavl ocaml-ffmpeg ocaml-dtools ocaml-duppy ocaml-mm ocaml-cry ocaml-taglib ocaml-lame ocaml-mad ocaml-ogg ocaml-vorbis ocaml-samplerate; do \
   cd /home/liquidsoap && git clone https://github.com/savonet/$i && cd $i && opam pin add --yes --no-action .; \
 done
-RUN cd /home/liquidsoap && git clone https://github.com/savonet/liquidsoap && cd liquidsoap && git checkout v2.0.0-beta2 && opam pin add --yes --no-action .
+#RUN cd /home/liquidsoap && git clone https://github.com/savonet/liquidsoap && cd liquidsoap && git checkout v2.0.0-beta2 && opam pin add --yes --no-action .
+RUN cd /home/liquidsoap && git clone https://github.com/savonet/liquidsoap && cd liquidsoap && opam pin add --yes --no-action .
 RUN opam install --yes liquidsoap ffmpeg cry taglib lame mad ogg vorbis samplerate
 
 RUN eval `opam config env`;liquidsoap --version
