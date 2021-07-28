@@ -169,6 +169,9 @@ def on_connect(headers) =
     ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
     log(ret)
+    ret = get_process_lines("./pub_metadata.sh 'LIVE - #{!current_dj}'")
+    ret = list.hd(default="",ret)
+    log(ret)
   elsif (((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) or (!current_dj != !last_dj_disconnected)) then
     log("*****************************************CREATING NEW DUMP***************************************************")
     current_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
@@ -176,6 +179,9 @@ def on_connect(headers) =
     log(!current_dump_filename);
     log("sending live notification")
     ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
+    ret = list.hd(default="",ret)
+    log(ret)
+    ret = get_process_lines("./pub_metadata.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
     log(ret)
   else
@@ -204,7 +210,7 @@ end
 live_dj := audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_connect=on_connect,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
 
 def new_meta(m) =
-  if "#{title_prefix}" == "" then
+  if "#{!title_prefix}" == "" then
     title = m["title"]
     [("title","#{title}")]
   else
@@ -215,6 +221,7 @@ end
 def pub_metadata(m) =
   log("on_track");
   title = m["title"]
+  log(title)
   ret = get_process_lines("./pub_metadata.sh '#{title}'")
   ret = list.hd(default="",ret)
   log(ret)
