@@ -1,6 +1,6 @@
 #!/usr/local/bin/liquidsoap
-%include "tunein.liq"
-%include "pushable.liq"
+# %include "tunein.liq"
+# %include "pushable.liq"
 
 set("sandbox.tool","disabled")
 set("log.file",true)
@@ -20,10 +20,10 @@ icecast_host = "icecast"
 icecast_port = "8000"
 crossfade_enabled = getenv("CROSSFADE")
 
-tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
-tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
-tunein_station_id = getenv("TUNEIN_STATION_ID")
-tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
+# tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
+# tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
+# tunein_station_id = getenv("TUNEIN_STATION_ID")
+# tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
 stereo_tool_key = getenv("STEREO_TOOL_KEY")
 
 # liq_secret = getenv("LIQ_SECRET")
@@ -68,7 +68,7 @@ live_dj = ref empty()
 
 def dj_dummy_started() =
   log("dj dummy on_start")
-  s = output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
+  s = output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
   # output.dummy(fallible=true, on_start=dummy_started, on_stop=dummy_stopped, s)
   stop_dump_f := fun () -> source.shutdown(s)
 end
@@ -147,7 +147,7 @@ end
 
 backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="backup_playlist", timeout=60.0, my_request_function)))
 
-scheduled_shows = cue_cut(audio_to_stereo(snd(request.queue.pushable(id="scheduled_shows", timeout=60.0))))
+scheduled_shows = cue_cut(audio_to_stereo(snd(request.queue(id="scheduled_shows", timeout=60.0))))
 
 def format_time(~sec,~min,~hour,~mday,~mon,~year,
                 ~wday,~yday,~isdst) =
@@ -240,7 +240,7 @@ output.dummy(fallible=true, on_start=dj_dummy_started, on_stop=dj_dummy_stopped,
 source = fallback(id="fallback",track_sensitive=false,
                   [!live_dj,scheduled_shows,mksafe(backup_playlist)])
 
-source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
+# source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
 source = on_track(pub_metadata, source)
 
