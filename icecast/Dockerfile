@@ -7,7 +7,7 @@ ENV LANG en_US.UTF-8
 
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y build-essential wget libxslt1-dev libvorbis-dev git
+RUN apt-get install -y build-essential wget libxslt1-dev libvorbis-dev git logrotate
 RUN apt-get clean
 
 RUN git clone https://github.com/karlheyes/icecast-kh.git
@@ -17,6 +17,8 @@ RUN cd icecast-kh; ./configure && make && make install
 ADD icecast.xml /icecast.xml
 RUN useradd --create-home -s /bin/bash icecast
 RUN chown icecast:users /icecast.xml
+
+ADD icecast.conf /etc/logrotate.d/icecast.conf
 
 RUN mkdir -p /usr/local/share/icecast/
 RUN mkdir -p /usr/local/share/icecast/logs
