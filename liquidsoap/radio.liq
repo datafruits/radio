@@ -149,6 +149,17 @@ backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="backup_playlist", 
 
 scheduled_shows = cue_cut(audio_to_stereo(snd(request.queue.pushable(id="scheduled_shows", timeout=60.0))))
 
+def scheduled_show_notification(m) =
+  log("on_track scheduled_show_notification")
+  title = m["title"]
+  log(title)
+  ret = get_process_lines("./live_notification.sh '#{title}'")
+  ret = list.hd(default="",ret)
+  log(ret)
+end
+
+scheduled_shows = on_track(scheduled_show_notification, scheduled_shows)
+
 def format_time(~sec,~min,~hour,~mday,~mon,~year,
                 ~wday,~yday,~isdst) =
   "#{1900+year}-#{mon+1}-#{mday}-#{hour}:#{min}:#{sec}"
@@ -165,7 +176,7 @@ def on_connect(headers) =
     current_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
     log("new dump filename (first dump):")
     log(!current_dump_filename);
-    log("sending live notification")
+    log("sending live notification for scheduled show")
     ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
     log(ret)
