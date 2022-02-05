@@ -1,6 +1,9 @@
 FROM archlinux
 
-RUN yes | pacman -Sy opam make m4 gcc patch diffutils ffmpeg git automake autoconf pkg-config which taglib sudo glibc jq libffi pcre libmad
+RUN yes | pacman -Sy archlinux-keyring
+RUN pacman-key --init
+RUN pacman-key --populate archlinux
+RUN yes | pacman -Syu --noconfirm opam make m4 gcc patch diffutils ffmpeg git automake autoconf pkg-config which taglib sudo glibc jq libffi pcre libmad
 
 RUN useradd liquidsoap && mkdir /home/liquidsoap && chown -R liquidsoap /home/liquidsoap
 RUN usermod -aG wheel liquidsoap
