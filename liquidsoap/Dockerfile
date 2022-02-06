@@ -53,6 +53,7 @@ RUN mkdir /home/liquidsoap/recordings
 RUN chown liquidsoap:liquidsoap /home/liquidsoap/recordings
 
 WORKDIR /home/liquidsoap/radio
+RUN eval $(opam env) && liquidsoap --check radio.liq
 RUN chown 1000:1000 /home/liquidsoap/tracks
 RUN chown 1000:1000 /home/liquidsoap/recordings
 
