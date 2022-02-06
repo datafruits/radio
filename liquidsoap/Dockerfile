@@ -34,7 +34,7 @@ RUN opam update
 # depext no longer required to install, integrated with opam
 # RUN opam install depext -y
 # RUN opam depext taglib mad lame ogg vorbis cry samplerate liquidsoap -y
-RUN opam install taglib mad lame ogg vorbis cry samplerate liquidsoap -y
+RUN opam install taglib mad lame ogg vorbis cry samplerate ocurl liquidsoap -y
 
 # RUN for i in ocaml-gavl ocaml-ffmpeg ocaml-dtools ocaml-duppy ocaml-mm ocaml-cry ocaml-taglib ocaml-lame ocaml-mad ocaml-ogg ocaml-vorbis ocaml-samplerate; do \
 #   cd /home/liquidsoap && git clone https://github.com/savonet/$i && cd $i && opam pin add --yes --no-action .; \
