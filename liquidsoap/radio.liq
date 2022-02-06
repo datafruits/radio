@@ -66,6 +66,9 @@ stop_dump_f = ref (fun () -> ())
 
 # live_dj = ref empty()
 live_dj = ref(source.fail())
+live_video_audio = ref(source.fail())
+live_video = ref(source.fail())
+vj_video = ref(source.fail())
 
 # def dj_dummy_started() =
 #   log("dj dummy on_start")
@@ -237,13 +240,24 @@ end
 
 live_dj := map_metadata(new_meta, !live_dj,update=false)
 
+live_video := input.ffmpeg(id="main_video", max_buffer=60.0, "https://viz.streampusher.com:16666/hls/datafruits.m3u8")
+vj_video := input.ffmpeg(id="vj_video", max_buffer=60.0, "https://viz.streampusher.com:16666/vj/datafruits.m3u8")
+
+live_video_audio := audio_to_stereo(drop_video(!live_video))
 # live_dj := pipe(process="./stereo_tool_cmd_64 - - -s ./stereotool.sts -k '#{stereo_tool_key}'", buffer=10.0, replay_delay=10.0, !live_dj)
 
 # output.dummy(fallible=true, on_start=dj_dummy_started, on_stop=dj_dummy_stopped, !live_dj)
 output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
 
 source = fallback(id="fallback",track_sensitive=false,
-                  [!live_dj,scheduled_shows,mksafe(backup_playlist)])
+                  [!live_video_audio, !live_dj,scheduled_shows,mksafe(backup_playlist)])
+
+single_video = noise()
+
+video_source = fallback(id="video_fallback",track_sensitive=false,
+                        [!live_video,
+                         mux_audio(drop_audio(!vj_video), audio=source),
+                         mksafe(mux_audio(single_video, audio=source))])
 
 # source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
@@ -263,3 +277,61 @@ output.icecast(%mp3,id="icecast",
               icy_metadata="true",description="",
               url="", encoding="UTF-8",
               mksafe(buffer(source)))
+
+aac_lofi = %ffmpeg(format="mpegts",
+                   %audio(
+                     codec="aac",
+                     channels=2,
+                     ar=44100
+                   ),
+                    %video(
+                      codec="libx264",
+                      b="5M"
+                    )
+                   )
+
+aac_midfi = %ffmpeg(format="mpegts",
+                  %audio(
+                    codec="aac",
+                    channels=2,
+                    ar=44100,
+                    b="96k"
+                  ),
+                    %video(
+                      codec="libx264",
+                      b="5M"
+                    )
+                  )
+
+aac_hifi = %ffmpeg(format="mpegts",
+                   %audio(
+                     codec="aac",
+                     channels=2,
+                     ar=44100,
+                     b="192k"
+                   ),
+                    %video(
+                      codec="libx264",
+                      b="5M"
+                    )
+                   )
+
+streams = [("aac_lofi",aac_lofi),
+           ("aac_midfi", aac_midfi),
+           ("aac_hifi", aac_hifi)]
+
+def segment_name(~position,~extname,stream_name) =
+  timestamp = int_of_float(time())
+  duration = 2
+  "#{stream_name}_#{duration}_#{timestamp}_#{position}.#{extname}"
+end
+
+output.file.hls(playlist="#{radio_name}.m3u8",
+                segment_duration=2.0,
+                segments=5,
+                segments_overhead=5,
+                segment_name=segment_name,
+                persist_at="/home/liquidsoap/state.config",
+                "/home/liquidsoap/hls",
+                streams,
+                video_source)
