@@ -66,9 +66,9 @@ stop_dump_f = ref (fun () -> ())
 
 # live_dj = ref empty()
 live_dj = ref(source.fail())
-live_video_audio = ref(source.fail())
-live_video = ref(source.fail())
-vj_video = ref(source.fail())
+# live_video_audio = ref(source.fail())
+# live_video = ref(source.fail())
+# vj_video = ref(source.fail())
 
 # def dj_dummy_started() =
 #   log("dj dummy on_start")
@@ -150,9 +150,9 @@ def my_request_function () =
   end
 end
 
-backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="backup_playlist", timeout=60.0, my_request_function)))
+backup_playlist = audio_to_stereo(request.dynamic(id="backup_playlist", timeout=60.0, my_request_function))
 
-scheduled_shows = cue_cut(audio_to_stereo(request.queue(id="scheduled_shows", timeout=60.0)))
+scheduled_shows = audio_to_stereo(request.queue(id="scheduled_shows", timeout=60.0))
 
 def format_time(~sec,~min,~hour,~mday,~mon,~year,
                 ~wday,~yday,~isdst) =
@@ -240,25 +240,28 @@ end
 
 live_dj := map_metadata(new_meta, !live_dj,update=false)
 
-live_video := input.ffmpeg(id="main_video", max_buffer=60.0, "https://viz.streampusher.com:16666/hls/datafruits.m3u8")
-vj_video := input.ffmpeg(id="vj_video", max_buffer=60.0, "https://viz.streampusher.com:16666/vj/datafruits.m3u8")
-
-live_video_audio := audio_to_stereo(drop_video(!live_video))
+# live_video := input.ffmpeg(id="main_video", max_buffer=60.0, "https://viz.streampusher.com:16666/hls/datafruits.m3u8")
+# vj_video := input.ffmpeg(id="vj_video", max_buffer=60.0, "https://viz.streampusher.com:16666/vj/datafruits.m3u8")
+#
+# live_video_audio := audio_to_stereo(drop_video(!live_video))
 # live_dj := pipe(process="./stereo_tool_cmd_64 - - -s ./stereotool.sts -k '#{stereo_tool_key}'", buffer=10.0, replay_delay=10.0, !live_dj)
 
 # output.dummy(fallible=true, on_start=dj_dummy_started, on_stop=dj_dummy_stopped, !live_dj)
 output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
 
 source = fallback(id="fallback",track_sensitive=false,
-                  [!live_video_audio, !live_dj,scheduled_shows,mksafe(backup_playlist)])
+                 [!live_dj,scheduled_shows,mksafe(backup_playlist)])
+#                 [!live_video_audio, !live_dj,scheduled_shows,mksafe(backup_playlist)])
 
 single_video = noise()
 
-video_source = fallback(id="video_fallback",track_sensitive=false,
-                        [!live_video,
-                         mux_audio(drop_audio(!vj_video), audio=source),
-                         mksafe(mux_audio(single_video, audio=source))])
-
+# live video (w audio), vj video mixed with radio audio, single video mixed with radio audio
+video_source = mux_audio(single_video, audio=source)
+# video_source = fallback(id="video_fallback",track_sensitive=false,
+#                         [!live_video,
+#                          mux_audio(drop_audio(!vj_video), audio=buffer(source)),
+#                          mksafe(mux_audio(single_video, audio=buffer(source)))])
+#
 # source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
 source.on_track(pub_metadata)
