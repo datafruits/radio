@@ -233,7 +233,7 @@ def pub_metadata(m) =
   log("on_track");
   title = m["title"]
   log(title)
-  ret = get_process_lines("./pub_metadata.sh '#{title}'")
+  ret = get_process_lines("./pub_metadata.sh \"#{string.quote(title)}\"")
   ret = list.hd(default="",ret)
   log(ret)
   #url = "https://#{radio_name}.streampusher.com/publish_metadata.json"
