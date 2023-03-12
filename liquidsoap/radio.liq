@@ -183,6 +183,9 @@ def on_connect(headers) =
     ret = process.read.lines("./pub_metadata.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
     log(ret)
+    ret = get_process_lines("./pub_metadata.sh 'LIVE - #{!current_dj}'")
+    ret = list.hd(default="",ret)
+    log(ret)
   elsif (((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) or (!current_dj != !last_dj_disconnected)) then
     log("*****************************************CREATING NEW DUMP***************************************************")
     # current_dump_filename := "#{!current_dj}-#{time.local(!current_dj_connected_at, format_time)}"
@@ -195,6 +198,9 @@ def on_connect(headers) =
     ret = list.hd(default="",ret)
     log(ret)
     ret = process.read.lines("./pub_metadata.sh 'LIVE - #{!current_dj}'")
+    ret = list.hd(default="",ret)
+    log(ret)
+    ret = get_process_lines("./pub_metadata.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
     log(ret)
   else
