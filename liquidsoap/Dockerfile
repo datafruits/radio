@@ -1,6 +1,9 @@
 FROM archlinux
 
-RUN yes | pacman -Sy opam make m4 gcc patch diffutils ffmpeg git automake autoconf pkg-config which taglib sudo glibc jq
+RUN yes | pacman -Sy archlinux-keyring
+RUN pacman-key --init
+RUN pacman-key --populate archlinux
+RUN yes | pacman -Syu --noconfirm opam make m4 gcc patch diffutils ffmpeg git automake autoconf pkg-config which taglib sudo glibc jq libffi pcre libmad
 
 RUN useradd liquidsoap && mkdir /home/liquidsoap && chown -R liquidsoap /home/liquidsoap
 RUN usermod -aG wheel liquidsoap
@@ -25,14 +28,22 @@ WORKDIR /home/liquidsoap
 RUN sudo touch /var/log/liquidsoap.log
 RUN sudo chown liquidsoap:users /var/log/liquidsoap.log
 
-RUN opam install depext -y
-RUN opam depext taglib mad lame ogg vorbis cry samplerate liquidsoap -y
-RUN opam install taglib mad lame ogg vorbis cry samplerate liquidsoap -y
-# RUN for i in ocaml-ffmpeg ocaml-dtools ocaml-duppy ocaml-mm ocaml-cry ocaml-taglib ocaml-lame ocaml-ogg ocaml-vorbis ocaml-samplerate liquidsoap; do \
-#       cd /home/liquidsoap && git clone https://github.com/savonet/$i && cd $i && opam pin add --yes --no-action .; \
-#     done
-# RUN opam install --yes liquidsoap ffmpeg cry taglib lame ogg vorbis samplerate
-RUN eval `opam config env`;liquidsoap --version
+RUN opam switch create 4.13.1
+RUN opam update
+
+# depext no longer required to install, integrated with opam
+# RUN opam install depext -y
+# RUN opam depext taglib mad lame ogg vorbis cry samplerate liquidsoap -y
+RUN opam install taglib mad lame ogg vorbis cry samplerate ocurl liquidsoap -y
+
+# RUN for i in ocaml-gavl ocaml-ffmpeg ocaml-dtools ocaml-duppy ocaml-mm ocaml-cry ocaml-taglib ocaml-lame ocaml-mad ocaml-ogg ocaml-vorbis ocaml-samplerate; do \
+#   cd /home/liquidsoap && git clone https://github.com/savonet/$i && cd $i && opam pin add --yes --no-action .; \
+# done
+# RUN cd /home/liquidsoap && git clone https://github.com/savonet/liquidsoap && cd liquidsoap && git checkout v2.0.0 && opam pin add --yes --no-action .
+#RUN cd /home/liquidsoap && git clone https://github.com/savonet/liquidsoap && cd liquidsoap && opam pin add --yes --no-action .
+# RUN opam install --yes liquidsoap ffmpeg cry taglib lame mad ogg vorbis samplerate
+#
+RUN eval $(opam env) && liquidsoap --version
 
 RUN mkdir /home/liquidsoap/radio
 ADD ./ /home/liquidsoap/radio/
@@ -42,6 +53,7 @@ RUN mkdir /home/liquidsoap/recordings
 RUN chown liquidsoap:liquidsoap /home/liquidsoap/recordings
 
 WORKDIR /home/liquidsoap/radio
+RUN eval $(opam env) && liquidsoap --check radio.liq
 RUN chown 1000:1000 /home/liquidsoap/tracks
 RUN chown 1000:1000 /home/liquidsoap/recordings
 

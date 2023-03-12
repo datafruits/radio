@@ -1,14 +1,14 @@
 #!/usr/local/bin/liquidsoap
-%include "tunein.liq"
-%include "pushable.liq"
+# %include "tunein.liq"
+# %include "pushable.liq"
 
 set("sandbox.tool","disabled")
 set("log.file",true)
 set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
-set("log.level",3)
+set("log.level",4)
 
-set("server.telnet",true)
+#set("server.telnet",true)
 set("server.socket",true)
 set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
 
@@ -20,10 +20,10 @@ icecast_host = "icecast"
 icecast_port = "8000"
 crossfade_enabled = getenv("CROSSFADE")
 
-tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
-tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
-tunein_station_id = getenv("TUNEIN_STATION_ID")
-tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
+# tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
+# tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
+# tunein_station_id = getenv("TUNEIN_STATION_ID")
+# tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
 stereo_tool_key = getenv("STEREO_TOOL_KEY")
 
 # liq_secret = getenv("LIQ_SECRET")
@@ -54,28 +54,30 @@ server.register("update",namespace="metadata",
                  usage="update title=foo,album=bar,..",
                  icy_update)
 # refs
-title_prefix = ref ""
+title_prefix = ref("")
 
-current_dj = ref ""
-last_dj_disconnected = ref ""
-current_dj_connected_at = ref 0.0
-last_dj_disconnected_at = ref 0.0
-current_dump_filename = ref ""
+current_dj = ref("")
+last_dj_disconnected = ref("")
+current_dj_connected_at = ref(0.0)
+last_dj_disconnected_at = ref(0.0)
+current_dump_filename = ref("")
 
 stop_dump_f = ref (fun () -> ())
 
-live_dj = ref empty()
+# live_dj = ref empty()
+live_dj = ref(source.fail())
 
 def dj_dummy_started() =
   log("dj dummy on_start")
   s = output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
+  # output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
   # output.dummy(fallible=true, on_start=dummy_started, on_stop=dummy_stopped, s)
-  stop_dump_f := fun () -> source.shutdown(s)
+  stop_dump_f := fun () -> s.shutdown()
 end
 
 def dj_dummy_stopped() =
   log("dj dummy on_stop")
-f = !stop_dump_f
+  f = !stop_dump_f
   f ()
 end
 
@@ -98,11 +100,11 @@ def get_password(user,password) =
 end
 
 #auth function
-def dj_auth(user,password) =
+def dj_auth(params) =
   log("dj auth")
-  u = get_user(user,password)
-  p = get_password(user,password)
-  ret = get_process_lines("./dj_auth.sh '#{u}' '#{p}' '#{radio_name}'")
+  u = get_user(params.user,params.password)
+  p = get_password(params.user,params.password)
+  ret = process.read.lines("./dj_auth.sh '#{u}' '#{p}' '#{radio_name}'")
   #ret has now the value of the live client (dj1,dj2, or djx), or "ERROR"/"unknown"
   ret = list.hd(default="",ret)
   #return true to let the client transmit data, or false to tell harbor to decline
@@ -121,7 +123,7 @@ end
 
 
 def my_request_function () =
-  lines = get_process_lines("./next_song.sh")
+  lines = process.read.lines("./next_song.sh")
   result = list.hd(default="", lines)
   log("result: #{result}")
   log("lines: #{lines}")
@@ -147,23 +149,19 @@ end
 
 backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="backup_playlist", timeout=60.0, my_request_function)))
 
-scheduled_shows = cue_cut(audio_to_stereo(snd(request.queue.pushable(id="scheduled_shows", timeout=60.0))))
+scheduled_shows = cue_cut(audio_to_stereo(request.queue(id="scheduled_shows", timeout=60.0)))
 
-def scheduled_show_notification(m) =
-  log("on_track scheduled_show_notification")
-  title = m["title"]
-  log(title)
-  ret = get_process_lines("./live_notification.sh '#{title}'")
-  ret = list.hd(default="",ret)
-  log(ret)
+# def format_time(~sec,~min,~hour,~mday,~mon,~year,
+#                 ~wday,~yday,~isdst) =
+#   "#{1900+year}-#{mon+1}-#{mday}-#{hour}:#{min}:#{sec}"
+# end
+#
+
+def format_time(t) =
+  t = time.local(t)
+  "#{t.year}-#{t.month}-#{t.day}-#{t.hour}-#{t.min}-#{t.sec}"
 end
 
-scheduled_shows = on_track(scheduled_show_notification, scheduled_shows)
-
-def format_time(~sec,~min,~hour,~mday,~mon,~year,
-                ~wday,~yday,~isdst) =
-  "#{1900+year}-#{mon+1}-#{mday}-#{hour}:#{min}:#{sec}"
-end
 
 def on_connect(headers) =
   log("on_connect")
@@ -173,11 +171,16 @@ def on_connect(headers) =
   log("last_dj_disconnected_at: #{!last_dj_disconnected_at}")
   if (!last_dj_disconnected_at == 0.0) then
     log("*****************************************CREATING NEW DUMP, last_dj_disconnected_at is null***************************************************")
-    current_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
+    # current_dump_filename := "#{!current_dj}-#{time.local(!current_dj_connected_at, format_time)}"
+    current_dump_filename := "#{!current_dj}-#{format_time(!current_dj_connected_at)}"
     log("new dump filename (first dump):")
     log(!current_dump_filename);
-    log("sending live notification for scheduled show")
-    ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
+    log("sending live notification")
+    log(!current_dj);
+    ret = process.read.lines("./live_notification.sh 'LIVE - #{!current_dj}'")
+    ret = list.hd(default="",ret)
+    log(ret)
+    ret = process.read.lines("./pub_metadata.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
     log(ret)
     ret = get_process_lines("./pub_metadata.sh 'LIVE - #{!current_dj}'")
@@ -185,11 +188,16 @@ def on_connect(headers) =
     log(ret)
   elsif (((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) or (!current_dj != !last_dj_disconnected)) then
     log("*****************************************CREATING NEW DUMP***************************************************")
-    current_dump_filename := "#{!current_dj}-#{localtime(!current_dj_connected_at, format_time)}"
+    # current_dump_filename := "#{!current_dj}-#{time.local(!current_dj_connected_at, format_time)}"
+    current_dump_filename := "#{!current_dj}-#{format_time(!current_dj_connected_at)}"
     log("new dump filename:")
     log(!current_dump_filename);
     log("sending live notification")
-    ret = get_process_lines("./live_notification.sh 'LIVE - #{!current_dj}'")
+    log(!current_dj);
+    ret = process.read.lines("./live_notification.sh 'LIVE - #{!current_dj}'")
+    ret = list.hd(default="",ret)
+    log(ret)
+    ret = process.read.lines("./pub_metadata.sh 'LIVE - #{!current_dj}'")
     ret = list.hd(default="",ret)
     log(ret)
     ret = get_process_lines("./pub_metadata.sh 'LIVE - #{!current_dj}'")
@@ -205,7 +213,9 @@ def on_disconnect() =
   log("disconnected")
   last_dj_disconnected_at := gettimeofday()
   # shutdown source
+  log('clearing title prefix')
   title_prefix := ""
+  log(!title_prefix)
   last_dj_disconnected := !current_dj
   current_dj := ""
 end
@@ -221,58 +231,60 @@ end
 live_dj := audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_connect=on_connect,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
 
 def new_meta(m) =
+  log("in new meta")
+  log(string_of(m))
   if "#{!title_prefix}" == "" then
+    log("title_prefix was blank, using m[title]")
+    log(m["title"])
     title = m["title"]
     [("title","#{title}")]
   else
+    log("using title_prefix")
+    log(!title_prefix)
     [("title","#{!title_prefix}")]
   end
 end
 
 def pub_metadata(m) =
+  log(string_of(m))
   log("on_track");
   title = m["title"]
-  log(title)
-  ret = get_process_lines("./pub_metadata.sh \"#{string.quote(title)}\"")
-  ret = list.hd(default="",ret)
-  log(ret)
-  #url = "https://#{radio_name}.streampusher.com/publish_metadata.json"
-  #log("url: #{url}")
-  # headers = [("Content-Type","application/json"), ("Accept", "application/json"), ("liq-secret", liq_secret)]
-  # let (status, headers, data) = https.post(headers=headers,data="{\"metadata\": \"#{title}\"}", url)
-  # log("status: #{status}");
-  # log("headers: #{headers}");
-  # log("data: #{data}");
-  # let (protocol, code, desc) = status;
-  # log("protocol: #{protocol}");
-  # log("response code: #{code}");
-  # log("desc: #{desc}");
+  log("calling pub_metadata")
+  log(string_of(string.length(title)))
+  if(string.length(title) > 0) then
+    ret = process.read.lines("./pub_metadata.sh \"#{string.quote(title)}\"")
+    ret = list.hd(default="",ret)
+    log(ret)
+  # else use initial_uri
+  end
 end
-
-live_dj := map_metadata(new_meta, !live_dj,update=false)
 
 live_dj := pipe(process="./stereo_tool_cmd_64 - - -s ./stereotool.sts -k '#{stereo_tool_key}'", buffer=10.0, replay_delay=10.0, !live_dj)
 
+live_dj := metadata.map(new_meta, !live_dj, update=false)
+
 output.dummy(fallible=true, on_start=dj_dummy_started, on_stop=dj_dummy_stopped, !live_dj)
+
+# output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
 
 source = fallback(id="fallback",track_sensitive=false,
                   [!live_dj,scheduled_shows,mksafe(backup_playlist)])
 
-source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
+# source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
 
-source = on_track(pub_metadata, source)
+source.on_track(pub_metadata)
 
 source = server.insert_metadata(id="fallback", source)
 
-clock.assign_new(id="vorbis_icecast", [output.icecast(%vorbis,id="icecast",
-                                       mount="#{radio_name}.ogg",
-                                       host=icecast_host, port=int_of_string(icecast_port), password="hackme",
-                                       icy_metadata="true",description="",
-                                       url="", encoding="UTF-8",
-                                       mksafe(buffer(source)))])
-clock.assign_new(id="mp3_icecast", [output.icecast(%mp3,id="icecast",
-                                    mount="#{radio_name}.mp3",
-                                    host=icecast_host, port=int_of_string(icecast_port), password="hackme",
-                                    icy_metadata="true",description="",
-                                    url="", encoding="UTF-8",
-                                    mksafe(buffer(source)))])
+output.icecast(%vorbis,id="icecast",
+               mount="#{radio_name}.ogg",
+               host=icecast_host, port=int_of_string(icecast_port), password="hackme",
+               icy_metadata="true",description="",
+               url="", encoding="UTF-8",
+               mksafe(buffer(source)))
+output.icecast(%mp3,id="icecast",
+              mount="#{radio_name}.mp3",
+              host=icecast_host, port=int_of_string(icecast_port), password="hackme",
+              icy_metadata="true",description="",
+              url="", encoding="UTF-8",
+              mksafe(buffer(source)))
