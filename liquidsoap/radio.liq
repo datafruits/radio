@@ -252,7 +252,7 @@ def pub_metadata(m) =
   log("calling pub_metadata")
   log(string_of(string.length(title)))
   if(string.length(title) > 0) then
-    ret = process.read.lines("./pub_metadata.sh '#{title}'")
+    ret = process.read.lines("./pub_metadata.sh \"#{string.quote(title)}\"")
     ret = list.hd(default="",ret)
     log(ret)
   # else use initial_uri
