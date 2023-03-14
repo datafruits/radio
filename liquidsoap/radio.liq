@@ -67,6 +67,8 @@ stop_dump_f = ref (fun () -> ())
 # live_dj = ref empty()
 live_dj = ref(source.fail())
 
+current_backup_playlist_title = ref("")
+
 def dj_dummy_started() =
   log("dj dummy on_start")
   s = output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
@@ -218,6 +220,11 @@ def on_disconnect() =
   log(!title_prefix)
   last_dj_disconnected := !current_dj
   current_dj := ""
+
+  log("dj disconnected, updating metadata")
+  ret = process.read.lines('./pub_metadata.sh #{string.quote(!current_backup_playlist_title)}')
+  ret = list.hd(default="",ret)
+  log(ret)
 end
 
 # backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
@@ -256,7 +263,8 @@ def pub_metadata(m) =
     ret = process.read.lines('./pub_metadata.sh #{string.quote(title)}')
     ret = list.hd(default="",ret)
     log(ret)
-  # else use initial_uri
+
+    current_backup_playlist_title := title
   end
 end
 
