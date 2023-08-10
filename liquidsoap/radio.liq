@@ -15,16 +15,16 @@ set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
 set("harbor.bind_addrs",["0.0.0.0"])
 
 # needs these env variables
-radio_name = getenv("RADIO_NAME")
+radio_name = environment.get("RADIO_NAME")
 icecast_host = "icecast"
 icecast_port = "8000"
-crossfade_enabled = getenv("CROSSFADE")
+crossfade_enabled = environment.get("CROSSFADE")
 
 # tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
 # tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
 # tunein_station_id = getenv("TUNEIN_STATION_ID")
 # tunein_metadata_updates_enabled = getenv("TUNEIN_METADATA_UPDATES_ENABLED")
-stereo_tool_key = getenv("STEREO_TOOL_KEY")
+stereo_tool_key = environment.get("STEREO_TOOL_KEY")
 
 # liq_secret = getenv("LIQ_SECRET")
 
@@ -274,12 +274,12 @@ source = server.insert_metadata(id="fallback", source)
 output.icecast(%vorbis,id="icecast",
                mount="#{radio_name}.ogg",
                host=icecast_host, port=int_of_string(icecast_port), password="hackme",
-               icy_metadata="true",description="",
+               send_icy_metadata=true,description="",
                url="", encoding="UTF-8",
                mksafe(buffer(source)))
 output.icecast(%mp3,id="icecast",
               mount="#{radio_name}.mp3",
               host=icecast_host, port=int_of_string(icecast_port), password="hackme",
-              icy_metadata="true",description="",
+              send_icy_metadata=true,description="",
               url="", encoding="UTF-8",
               mksafe(buffer(source)))
