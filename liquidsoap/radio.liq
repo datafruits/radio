@@ -147,9 +147,9 @@ def my_request_function () =
   end
 end
 
-backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="backup_playlist", timeout=60.0, my_request_function)))
+backup_playlist = request.dynamic(id="backup_playlist", timeout=60.0, my_request_function)
 
-scheduled_shows = cue_cut(audio_to_stereo(request.queue(id="scheduled_shows", timeout=60.0)))
+scheduled_shows = request.queue(id="scheduled_shows", timeout=60.0)
 
 # def format_time(~sec,~min,~hour,~mday,~mon,~year,
 #                 ~wday,~yday,~isdst) =
@@ -254,7 +254,14 @@ def pub_metadata(m) =
   end
 end
 
-live_dj := pipe(process="./stereo_tool_cmd_64 - - -s ./stereotool.sts -k '#{stereo_tool_key}'", buffer=10.0, replay_delay=10.0, !live_dj)
+#live_dj := pipe(process="./stereo_tool_cmd_64 - - -s ./stereotool.sts -k '#{stereo_tool_key}'", buffer=10.0, replay_delay=10.0, !live_dj)
+#
+live_dj := stereotool(
+  library_file="./libStereoTool_intel64.so",
+  license_key="#{stereo_tool_key}",
+  preset="./stereotool.sts",
+  !live_dj
+)
 
 live_dj := metadata.map(new_meta, !live_dj, update=false)
 
