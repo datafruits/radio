@@ -70,7 +70,7 @@ live_dj = ref(source.fail())
 def dj_dummy_started() =
   log("dj dummy on_start")
   s = output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
-  # output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
+  # TODO do we need the dummy?
   # output.dummy(fallible=true, on_start=dummy_started, on_stop=dummy_stopped, s)
   stop_dump_f := fun () -> s.shutdown()
 end
@@ -151,12 +151,6 @@ backup_playlist = request.dynamic(id="backup_playlist", timeout=60.0, my_request
 
 scheduled_shows = request.queue(id="scheduled_shows", timeout=60.0)
 
-# def format_time(~sec,~min,~hour,~mday,~mon,~year,
-#                 ~wday,~yday,~isdst) =
-#   "#{1900+year}-#{mon+1}-#{mday}-#{hour}:#{min}:#{sec}"
-# end
-#
-
 def format_time(t) =
   t = time.local(t)
   "#{t.year}-#{t.month}-#{t.day}-#{t.hour}-#{t.min}-#{t.sec}"
@@ -171,7 +165,6 @@ def on_connect(headers) =
   log("last_dj_disconnected_at: #{!last_dj_disconnected_at}")
   if (!last_dj_disconnected_at == 0.0) then
     log("*****************************************CREATING NEW DUMP, last_dj_disconnected_at is null***************************************************")
-    # current_dump_filename := "#{!current_dj}-#{time.local(!current_dj_connected_at, format_time)}"
     current_dump_filename := "#{!current_dj}-#{format_time(!current_dj_connected_at)}"
     log("new dump filename (first dump):")
     log(!current_dump_filename);
@@ -185,7 +178,6 @@ def on_connect(headers) =
     log(ret)
   elsif (((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) or (!current_dj != !last_dj_disconnected)) then
     log("*****************************************CREATING NEW DUMP***************************************************")
-    # current_dump_filename := "#{!current_dj}-#{time.local(!current_dj_connected_at, format_time)}"
     current_dump_filename := "#{!current_dj}-#{format_time(!current_dj_connected_at)}"
     log("new dump filename:")
     log(!current_dump_filename);
@@ -213,8 +205,6 @@ def on_disconnect() =
   last_dj_disconnected := !current_dj
   current_dj := ""
 end
-
-# backup_playlist = cue_cut(audio_to_stereo(request.dynamic(id="requests", timeout=60.0, my_request_function)))
 
 if crossfade_enabled == "true" then
   output.dummy(fallible=true,crossfade(backup_playlist))
@@ -254,8 +244,6 @@ def pub_metadata(m) =
   end
 end
 
-#live_dj := pipe(process="./stereo_tool_cmd_64 - - -s ./stereotool.sts -k '#{stereo_tool_key}'", buffer=10.0, replay_delay=10.0, !live_dj)
-#
 live_dj := stereotool(
   library_file="./libStereoTool_intel64.so",
   license_key="#{stereo_tool_key}",
@@ -266,8 +254,6 @@ live_dj := stereotool(
 live_dj := metadata.map(new_meta, !live_dj, update=false)
 
 output.dummy(fallible=true, on_start=dj_dummy_started, on_stop=dj_dummy_stopped, !live_dj)
-
-# output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
 
 source = fallback(id="fallback",track_sensitive=false,
                   [!live_dj,scheduled_shows,mksafe(backup_playlist)])
