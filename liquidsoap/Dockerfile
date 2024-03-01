@@ -1,6 +1,7 @@
 FROM archlinux
 
-RUN yes | pacman -Sy archlinux-keyring
+RUN pacman -Sy --noconfirm archlinux-keyring
+
 RUN pacman-key --init
 RUN pacman-key --populate archlinux
 RUN yes | pacman -Syu --noconfirm opam make m4 gcc patch diffutils ffmpeg git automake autoconf pkg-config which taglib sudo glibc jq libffi pcre libmad
@@ -28,13 +29,14 @@ WORKDIR /home/liquidsoap
 RUN sudo touch /var/log/liquidsoap.log
 RUN sudo chown liquidsoap:users /var/log/liquidsoap.log
 
-RUN opam switch create 4.13.1
+RUN opam switch create 4.14.0
 RUN opam update
 
 # depext no longer required to install, integrated with opam
 # RUN opam install depext -y
 # RUN opam depext taglib mad lame ogg vorbis cry samplerate liquidsoap -y
-RUN opam install taglib mad lame ogg vorbis cry samplerate ocurl liquidsoap -y
+# RUN opam install taglib mad lame ogg vorbis cry samplerate ocurl liquidsoap -y
+RUN opam install ctypes-foreign metadata mad lame ogg vorbis cry samplerate ocurl liquidsoap -y
 
 # RUN for i in ocaml-gavl ocaml-ffmpeg ocaml-dtools ocaml-duppy ocaml-mm ocaml-cry ocaml-taglib ocaml-lame ocaml-mad ocaml-ogg ocaml-vorbis ocaml-samplerate; do \
 #   cd /home/liquidsoap && git clone https://github.com/savonet/$i && cd $i && opam pin add --yes --no-action .; \
