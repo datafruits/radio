@@ -167,7 +167,7 @@
         <logdir>/usr/local/share/icecast/logs</logdir>
         <webroot>/usr/local/share/icecast/web</webroot>
         <adminroot>/usr/local/share/icecast/admin</adminroot>
-        <!-- <pidfile>/usr/local/share/icecast/icecast.pid</pidfile> -->
+        <pidfile>/usr/local/share/icecast/icecast.pid</pidfile>
         <!-- <ssl_certificate>/usr/local/share/icecast/icecast.pem</ssl_certificate> -->
 
         <!-- Aliases: treat requests for 'source' path as being for 'dest' path
