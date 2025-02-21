@@ -6,7 +6,7 @@ set("sandbox.tool","disabled")
 set("log.file",true)
 set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
-set("log.level",4)
+set("log.level", 5)
 
 #set("server.telnet",true)
 set("server.socket",true)
@@ -18,7 +18,6 @@ set("harbor.bind_addrs",["0.0.0.0"])
 radio_name = environment.get("RADIO_NAME")
 icecast_host = "icecast"
 icecast_port = "8000"
-crossfade_enabled = environment.get("CROSSFADE")
 
 # tunein_partner_id = getenv("TUNEIN_PARTNER_ID")
 # tunein_partner_key = getenv("TUNEIN_PARTNER_KEY")
@@ -27,6 +26,22 @@ crossfade_enabled = environment.get("CROSSFADE")
 stereo_tool_key = environment.get("STEREO_TOOL_KEY")
 
 # liq_secret = getenv("LIQ_SECRET")
+#
+# refs
+title_prefix = ref("")
+
+current_dj = ref("")
+last_dj_disconnected = ref("")
+current_dj_connected_at = ref(0.0)
+last_dj_disconnected_at = ref(0.0)
+current_dump_filename = ref("")
+next_dump_filename = ref("")
+
+stop_dump_f = ref (fun () -> ())
+
+# live_dj = ref empty()
+live_dj = ref(source.fail())
+# fallback_ref = ref(fallback([source.fail()]))
 
 def icy_update(v) =
   # Parse the argument
@@ -53,23 +68,10 @@ server.register("update",namespace="metadata",
                  description="Update metadata",
                  usage="update title=foo,album=bar,..",
                  icy_update)
-# refs
-title_prefix = ref("")
-
-current_dj = ref("")
-last_dj_disconnected = ref("")
-current_dj_connected_at = ref(0.0)
-last_dj_disconnected_at = ref(0.0)
-current_dump_filename = ref("")
-
-stop_dump_f = ref (fun () -> ())
-
-# live_dj = ref empty()
-live_dj = ref(source.fail())
 
 def dj_dummy_started() =
   log("dj dummy on_start")
-  s = output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{!current_dump_filename}.mp3", !live_dj, fallible=true, append=true)
+  s = output.file(%mp3, "/home/liquidsoap/recordings/#{radio_name}-#{current_dump_filename()}.mp3", live_dj(), fallible=true, append=true)
   # TODO do we need the dummy?
   # output.dummy(fallible=true, on_start=dummy_started, on_stop=dummy_stopped, s)
   stop_dump_f := fun () -> s.shutdown()
@@ -77,8 +79,8 @@ end
 
 def dj_dummy_stopped() =
   log("dj dummy on_stop")
-  f = !stop_dump_f
-  f ()
+  f = stop_dump_f()
+  f()
 end
 
 def get_user(user,password) =
@@ -156,37 +158,38 @@ def format_time(t) =
   "#{t.year}-#{t.month}-#{t.day}-#{t.hour}-#{t.min}-#{t.sec}"
 end
 
-
 def on_connect(headers) =
   log("on_connect")
   list.iter(fun(header)-> log("#{fst(header)}: #{snd(header)}"), headers)
   # if they disconnected over 60 seconds ago, use new filename
-  log("current_dj_connected_at: #{!current_dj_connected_at}")
-  log("last_dj_disconnected_at: #{!last_dj_disconnected_at}")
-  if (!last_dj_disconnected_at == 0.0) then
+  log("current_dj_connected_at: #{current_dj_connected_at()}")
+  log("last_dj_disconnected_at: #{last_dj_disconnected_at()}")
+  if (last_dj_disconnected_at() == 0.0) then
     log("*****************************************CREATING NEW DUMP, last_dj_disconnected_at is null***************************************************")
-    current_dump_filename := "#{!current_dj}-#{format_time(!current_dj_connected_at)}"
+    next_dump_filename := "#{current_dj()}-#{format_time(current_dj_connected_at())}"
     log("new dump filename (first dump):")
-    log(!current_dump_filename);
+    log(current_dump_filename());
     log("sending live notification")
-    log(!current_dj);
-    ret = process.read.lines("./live_notification.sh 'LIVE - #{!current_dj}'")
+    log(current_dj());
+    ret = process.read.lines("./live_notification.sh 'LIVE -- #{current_dj()}'")
     ret = list.hd(default="",ret)
     log(ret)
-    ret = process.read.lines("./pub_metadata.sh 'LIVE - #{!current_dj}'")
+    log("calling pub metadata for new dump 1")
+    ret = process.read.lines("./pub_metadata.sh 'LIVE -- #{current_dj()}'")
     ret = list.hd(default="",ret)
     log(ret)
-  elsif (((!current_dj_connected_at - !last_dj_disconnected_at) > 60.0) or (!current_dj != !last_dj_disconnected)) then
+  elsif (((current_dj_connected_at() - last_dj_disconnected_at()) > 60.0) or (current_dj() != last_dj_disconnected())) then
     log("*****************************************CREATING NEW DUMP***************************************************")
-    current_dump_filename := "#{!current_dj}-#{format_time(!current_dj_connected_at)}"
+    next_dump_filename := "#{current_dj()}-#{format_time(current_dj_connected_at())}"
     log("new dump filename:")
-    log(!current_dump_filename);
+    log(current_dump_filename());
     log("sending live notification")
-    log(!current_dj);
-    ret = process.read.lines("./live_notification.sh 'LIVE - #{!current_dj}'")
+    log(current_dj());
+    ret = process.read.lines("./live_notification.sh 'LIVE -- #{current_dj()}'")
     ret = list.hd(default="",ret)
     log(ret)
-    ret = process.read.lines("./pub_metadata.sh 'LIVE - #{!current_dj}'")
+    log("calling pub metadata for new dump 1")
+    ret = process.read.lines("./pub_metadata.sh 'LIVE -- #{current_dj()}'")
     ret = list.hd(default="",ret)
     log(ret)
   else
@@ -201,40 +204,46 @@ def on_disconnect() =
   # shutdown source
   log('clearing title prefix')
   title_prefix := ""
-  log(!title_prefix)
-  last_dj_disconnected := !current_dj
+  log(title_prefix())
+  last_dj_disconnected := current_dj()
   current_dj := ""
+
+  log("calling on_disconnect script")
+  ret = process.read.lines("./on_disconnect.sh")
+  ret = list.hd(default="",ret)
+  log(ret)
 end
 
-if crossfade_enabled == "true" then
-  output.dummy(fallible=true,crossfade(backup_playlist))
-else
-  output.dummy(fallible=true,backup_playlist)
-end
+# buffer breaks fallback?
+live_dj := stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_connect=on_connect,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
 
-live_dj := audio_to_stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_connect=on_connect,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
-
+# live_dj := input.harbor(
+#   "liq_live_dj",
+#   port=9000,
+#   password="abc123"
+# )
+#
 def new_meta(m) =
   log("in new meta")
-  log(string_of(m))
-  if "#{!title_prefix}" == "" then
+  log(string(m))
+  if "#{title_prefix()}" == "" then
     log("title_prefix was blank, using m[title]")
     log(m["title"])
     title = m["title"]
     [("title","#{title}")]
   else
     log("using title_prefix")
-    log(!title_prefix)
-    [("title","#{!title_prefix}")]
+    log(title_prefix())
+    [("title","#{title_prefix()}")]
   end
 end
 
 def pub_metadata(m) =
-  log(string_of(m))
+  log(string(m))
   log("on_track");
   title = m["title"]
   log("calling pub_metadata")
-  log(string_of(string.length(title)))
+  log(string(string.length(title)))
   log("quoted title: #{string.quote(title)}")
   if(string.length(title) > 0) then
     ret = process.read.lines('./pub_metadata.sh #{string.quote(title)}')
@@ -245,24 +254,66 @@ def pub_metadata(m) =
 end
 
 live_dj := stereotool(
-  library_file="./libStereoTool_intel64.so",
+  library_file="./libStereoTool_64.so",
   license_key="#{stereo_tool_key}",
   preset="./stereotool.sts",
-  !live_dj
+  live_dj()
 )
 
-live_dj := metadata.map(new_meta, !live_dj, update=false)
+# pipe method
+# live_dj := pipe(process="./stereo_tool_cmd_64 - - -s ./stereotool.sts -k '#{stereo_tool_key}'", buffer=10.0, replay_delay=10.0, live_dj())
 
-output.dummy(fallible=true, on_start=dj_dummy_started, on_stop=dj_dummy_stopped, !live_dj)
+live_dj := metadata.map(id="live_dj_metadata_map", new_meta, live_dj(), update=false)
+
+# live dj recording
+def reopen_when() =
+  if current_dump_filename() != next_dump_filename() then
+    log("current_dump_filename != next_dump_filename !! reassigning current to next...")
+    current_dump_filename := next_dump_filename()
+    log("current_dump_filename was assigned: #{current_dump_filename()}")
+    true
+  else
+    false
+  end
+end
+
+def current_dump_filename_getter() =
+  log("in current_dump_filename_getter: #{current_dump_filename()}")
+  "/home/liquidsoap/recordings/#{radio_name}-#{current_dump_filename()}.mp3"
+end
+
+output.file(%mp3, current_dump_filename_getter, live_dj(), fallible=true, reopen_when=reopen_when, reopen_delay=0.0, append=true)
 
 source = fallback(id="fallback",track_sensitive=false,
-                  [!live_dj,scheduled_shows,mksafe(backup_playlist)])
+                 [live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
 
-# source = if tunein_metadata_updates_enabled == "true" then on_track(tunein.submit(partnerid=tunein_partner_id,partnerkey=tunein_partner_key,stationid=tunein_station_id), source) else source end
+source.on_metadata(pub_metadata)
 
-source.on_track(pub_metadata)
+def current_fallback_source(v) =
+  selected_source = "#{source.selected()}"
+  selected_source
+end
 
-source = server.insert_metadata(id="fallback", source)
+server.register("current_source", namespace="fallback",
+                description="Get currently selected fallback source",
+                usage="current_source",
+                current_fallback_source)
+
+def current_fallback_duration(v) =
+  duration = "#{source.duration()}"
+  elapsed = "#{source.elapsed()}"
+  remaining = "#{source.remaining()}"
+  "elapsed: #{elapsed} / duration: #{duration} / remaining: #{remaining}"
+end
+
+server.register("duration", namespace="fallback",
+                description="Get currently selected fallback duration, remaining, elapsed",
+                usage="duration",
+                current_fallback_duration)
+
+# TODO unneeded ???
+# source.on_track(pub_metadata)
+# source = server.insert_metadata(id="fallback", source)
 
 output.icecast(%vorbis,id="icecast",
                mount="#{radio_name}.ogg",

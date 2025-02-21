@@ -49,6 +49,10 @@ RUN eval $(opam env) && liquidsoap --version
 
 RUN mkdir /home/liquidsoap/radio
 ADD ./ /home/liquidsoap/radio/
+
+RUN sudo chown -R liquidsoap:liquidsoap /home/liquidsoap/radio/
+RUN chmod +x /home/liquidsoap/radio/libStereoTool_64.so
+
 RUN mkdir /home/liquidsoap/tracks
 RUN chown liquidsoap:liquidsoap /home/liquidsoap/tracks
 RUN mkdir /home/liquidsoap/recordings
@@ -56,8 +60,8 @@ RUN chown liquidsoap:liquidsoap /home/liquidsoap/recordings
 
 WORKDIR /home/liquidsoap/radio
 RUN eval $(opam env) && liquidsoap --check radio.liq
-RUN chown 1000:1000 /home/liquidsoap/tracks
-RUN chown 1000:1000 /home/liquidsoap/recordings
+# RUN chown 1000:1000 /home/liquidsoap/tracks
+# RUN chown 1000:1000 /home/liquidsoap/recordings
 
 EXPOSE 9000
 CMD ["/bin/bash", "-c", "eval `opam config env`; liquidsoap radio.liq"]
