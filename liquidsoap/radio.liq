@@ -8,6 +8,8 @@ set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
 set("log.level", 5)
 
+set("request.deprecated_on_air_metadata", true)
+
 #set("server.telnet",true)
 set("server.socket",true)
 set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
@@ -153,6 +155,13 @@ backup_playlist = request.dynamic(id="backup_playlist", timeout=60.0, my_request
 
 scheduled_shows = request.queue(id="scheduled_shows", timeout=60.0)
 
+scheduled_shows = stereotool(
+  library_file="./libStereoTool_64.so",
+  license_key="#{stereo_tool_key}",
+  preset="./stereotool.sts",
+  scheduled_shows
+)
+
 def format_time(t) =
   t = time.local(t)
   "#{t.year}-#{t.month}-#{t.day}-#{t.hour}-#{t.min}-#{t.sec}"
@@ -287,7 +296,7 @@ output.file(%mp3, current_dump_filename_getter, live_dj(), fallible=true, reopen
 source = fallback(id="fallback",track_sensitive=false,
                  [live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
 
-source.on_metadata(pub_metadata)
+source.on_metadata(synchronous=false, pub_metadata)
 
 def current_fallback_source(v) =
   selected_source = "#{source.selected()}"

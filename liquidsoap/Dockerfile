@@ -29,7 +29,7 @@ WORKDIR /home/liquidsoap
 RUN sudo touch /var/log/liquidsoap.log
 RUN sudo chown liquidsoap:users /var/log/liquidsoap.log
 
-RUN opam switch create 4.14.0
+RUN opam switch create 4.14.2
 RUN opam update
 
 # depext no longer required to install, integrated with opam
