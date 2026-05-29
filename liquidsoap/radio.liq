@@ -12,6 +12,7 @@ set("request.deprecated_on_air_metadata", true)
 
 #set("server.telnet",true)
 set("server.socket",true)
+# set("server.socket.path","/tmp/datafruits/liquidsoap.sock")
 set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
 
 set("harbor.bind_addrs",["0.0.0.0"])
@@ -43,6 +44,7 @@ stop_dump_f = ref (fun () -> ())
 
 # live_dj = ref empty()
 live_dj = ref(source.fail())
+rtmp_relay = ref(source.fail())
 # fallback_ref = ref(fallback([source.fail()]))
 
 def icy_update(v) =
@@ -85,7 +87,7 @@ def dj_dummy_stopped() =
   f()
 end
 
-def get_user(user,password) =
+def get_user(user, password) =
   if user == "source" then
     x = string.split(separator=';',password)
     list.nth(x,0,default="")
@@ -94,7 +96,7 @@ def get_user(user,password) =
   end
 end
 
-def get_password(user,password) =
+def get_password(user, password) =
   if user == "source" then
     x = string.split(separator=';',password)
     list.nth(x,1,default="")
@@ -104,10 +106,10 @@ def get_password(user,password) =
 end
 
 #auth function
-def dj_auth(params) =
+def dj_auth(req) =
   log("dj auth")
-  u = get_user(params.user,params.password)
-  p = get_password(params.user,params.password)
+  u = get_user(req.user, req.password)
+  p = get_password(req.user, req.password)
   ret = process.read.lines("./dj_auth.sh '#{u}' '#{p}' '#{radio_name}'")
   #ret has now the value of the live client (dj1,dj2, or djx), or "ERROR"/"unknown"
   ret = list.hd(default="",ret)
@@ -226,6 +228,12 @@ end
 # buffer breaks fallback?
 live_dj := stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_connect=on_connect,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
 
+# this source doesn't need on_connect/disconnect handlers, all recording/metadata is handled elsewhere
+# TODO maybe we need disconnect handler to clear metadata??
+rtmp_relay := stereo(input.harbor("#{radio_name}_rtmp",id="rtmp_relay",port=9001,logfile="/tmp/liquidsoap_rtmp_relay_harbor.log",user="rtmp_source",password="pricemaster9876",buffer=15.0,max=40.0))
+
+# TODO different harbor for rtmp relay???
+
 # live_dj := input.harbor(
 #   "liq_live_dj",
 #   port=9000,
@@ -294,7 +302,7 @@ end
 output.file(%mp3, current_dump_filename_getter, live_dj(), fallible=true, reopen_when=reopen_when, reopen_delay=0.0, append=true)
 
 source = fallback(id="fallback",track_sensitive=false,
-                 [live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
+                 [rtmp_relay(),live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
 
 source.on_metadata(synchronous=false, pub_metadata)
 
