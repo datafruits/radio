@@ -44,7 +44,7 @@ stop_dump_f = ref (fun () -> ())
 
 # live_dj = ref empty()
 live_dj = ref(source.fail())
-rtmp_relay = ref(source.fail())
+# rtmp_relay = ref(source.fail())
 # fallback_ref = ref(fallback([source.fail()]))
 
 def icy_update(v) =
@@ -228,11 +228,17 @@ end
 # buffer breaks fallback?
 live_dj := stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_connect=on_connect,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
 
-# this source doesn't need on_connect/disconnect handlers, all recording/metadata is handled elsewhere
-# TODO maybe we need disconnect handler to clear metadata??
-rtmp_relay := stereo(input.harbor("#{radio_name}_rtmp",id="rtmp_relay",port=9001,logfile="/tmp/liquidsoap_rtmp_relay_harbor.log",user="rtmp_source",password="pricemaster9876",buffer=15.0,max=40.0))
+# this source doesn't need on_connect handler, all recording/metadata is handled elsewhere
+# disconnect handler to clear metadata is necessary though
+# rtmp_relay := stereo(input.harbor("#{radio_name}_rtmp",id="rtmp_relay",port=9001,logfile="/tmp/liquidsoap_rtmp_relay_harbor.log",user="rtmp_source",password="pricemaster9876",on_disconnect=on_disconnect,buffer=15.0,max=40.0))
 
-# TODO different harbor for rtmp relay???
+# ingest rtmp from viz server
+
+# how do we get the key?!
+# live = input.rtmp(listen=false, "rtmp://localhost:1935/live/key")
+# live = input.rtmp(listen=false, "rtmp://vjstream.streampusher.com:1935/live/key")
+
+# rtmp = input.rtmp("rtmp://0.0.0.0:1935/live", listen=true)
 
 # live_dj := input.harbor(
 #   "liq_live_dj",
@@ -301,8 +307,14 @@ end
 
 output.file(%mp3, current_dump_filename_getter, live_dj(), fallible=true, reopen_when=reopen_when, reopen_delay=0.0, append=true)
 
+# nginx-rtmp pushes the live RTMP stream here when a DJ is streaming with obs
+rtmp_relay = input.rtmp(listen=true, "rtmp://datafruits_viz:1936")
+# TODO uncommenting this causes type error
+# rtmp_audio = mksafe(stereo(source.tracks(rtmp_relay).audio))
+
 source = fallback(id="fallback",track_sensitive=false,
-                 [rtmp_relay(),live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
+                  [live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
+#                 [rtmp_audio, live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
 
 source.on_metadata(synchronous=false, pub_metadata)
 
@@ -344,3 +356,29 @@ output.icecast(%mp3,id="icecast",
               send_icy_metadata=true,description="",
               url="", encoding="UTF-8",
               mksafe(buffer(source)))
+
+# HLS video output
+
+single_video = noise()
+
+logo_fallback = mux_audio(single_video, audio=source)
+
+# RTMP video takes priority; fall back to static logo + audio
+hls_source = fallback(id="hls_fallback", track_sensitive=false, [rtmp_relay, logo_fallback])
+
+hls_enc = %ffmpeg(
+  format="mpegts",
+  %video(codec="libx264", x264opts="keyint=100:min-keyint=100"),
+  %audio(codec="aac", channels=2, ar=44100)
+)
+
+output.file.hls(
+  id="hls_output",
+  playlist="live.m3u8",
+  segment_duration=4.0,
+  segments=5,
+  segments_overhead=5,
+  "/home/liquidsoap/hls/",
+  [("live", hls_enc)],
+  hls_source
+)
