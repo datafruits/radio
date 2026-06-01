@@ -6,7 +6,7 @@ set("sandbox.tool","disabled")
 set("log.file",true)
 set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
-set("log.level", 5)
+set("log.level", 3)
 
 set("request.deprecated_on_air_metadata", true)
 
@@ -308,17 +308,16 @@ end
 output.file(%mp3, current_dump_filename_getter, live_dj(), fallible=true, reopen_when=reopen_when, reopen_delay=0.0, append=true)
 
 # nginx-rtmp pushes the live RTMP stream here when a DJ is streaming with obs
-rtmp_relay = input.rtmp(listen=true, "rtmp://datafruits_viz:1936")
-# TODO uncommenting this causes type error
-rtmp_audio = stereo(source.tracks(rtmp_relay).audio)
+rtmp_relay = input.rtmp(listen=true, "rtmp://0.0.0.0:1936/live")
+rtmp_audio = stereo(rtmp_relay)
 
-source = fallback(id="fallback",track_sensitive=false,
+radio_fallback = fallback(id="fallback",track_sensitive=false,
                  [rtmp_audio, live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
 
-source.on_metadata(synchronous=false, pub_metadata)
+radio_fallback.on_metadata(synchronous=false, pub_metadata)
 
 def current_fallback_source(v) =
-  selected_source = "#{source.selected()}"
+  selected_source = "#{radio_fallback.selected()}"
   selected_source
 end
 
@@ -328,9 +327,9 @@ server.register("current_source", namespace="fallback",
                 current_fallback_source)
 
 def current_fallback_duration(v) =
-  duration = "#{source.duration()}"
-  elapsed = "#{source.elapsed()}"
-  remaining = "#{source.remaining()}"
+  duration = "#{radio_fallback.duration()}"
+  elapsed = "#{radio_fallback.elapsed()}"
+  remaining = "#{radio_fallback.remaining()}"
   "elapsed: #{elapsed} / duration: #{duration} / remaining: #{remaining}"
 end
 
@@ -339,34 +338,30 @@ server.register("duration", namespace="fallback",
                 usage="duration",
                 current_fallback_duration)
 
-# TODO unneeded ???
-# source.on_track(pub_metadata)
-# source = server.insert_metadata(id="fallback", source)
-
 output.icecast(%vorbis,id="icecast",
                mount="#{radio_name}.ogg",
                host=icecast_host, port=int_of_string(icecast_port), password="hackme",
                send_icy_metadata=true,description="",
                url="", encoding="UTF-8",
-               mksafe(buffer(source)))
+               mksafe(buffer(radio_fallback)))
 output.icecast(%mp3,id="icecast",
               mount="#{radio_name}.mp3",
               host=icecast_host, port=int_of_string(icecast_port), password="hackme",
               send_icy_metadata=true,description="",
               url="", encoding="UTF-8",
-              mksafe(buffer(source)))
+              mksafe(buffer(radio_fallback)))
 
 # HLS video output
 
 hls_audio_fallback = fallback(id="fallback",track_sensitive=false,
                              [live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
 
-single_video = noise()
+single_video = video.testsrc.ffmpeg()
 
-logo_fallback = mux_audio(single_video, audio=hls_audio_fallback)
+logo_fallback = source.mux.audio(single_video, audio=hls_audio_fallback)
 
 # RTMP video takes priority; fall back to static logo + audio
-hls_source = fallback(id="hls_fallback", track_sensitive=false, [rtmp_relay, logo_fallback])
+hls_source = fallback(id="hls_fallback", track_sensitive=false, [rtmp_relay, mksafe(logo_fallback)])
 
 hls_enc = %ffmpeg(
   format="mpegts",
