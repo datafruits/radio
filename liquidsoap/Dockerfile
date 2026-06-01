@@ -70,7 +70,7 @@ RUN chown liquidsoap:liquidsoap /home/liquidsoap/hls
 RUN chown -R liquidsoap:liquidsoap /home/liquidsoap/
 
 WORKDIR /home/liquidsoap/radio
-# RUN eval $(opam env) && liquidsoap --check radio.liq
+RUN liquidsoap --version
 RUN liquidsoap --check radio.liq
 # RUN chown 1000:1000 /home/liquidsoap/tracks
 # RUN chown 1000:1000 /home/liquidsoap/recordings

@@ -225,27 +225,12 @@ def on_disconnect() =
   log(ret)
 end
 
-# buffer breaks fallback?
 live_dj := stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_connect=on_connect,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
 
 # this source doesn't need on_connect handler, all recording/metadata is handled elsewhere
 # disconnect handler to clear metadata is necessary though
-# rtmp_relay := stereo(input.harbor("#{radio_name}_rtmp",id="rtmp_relay",port=9001,logfile="/tmp/liquidsoap_rtmp_relay_harbor.log",user="rtmp_source",password="pricemaster9876",on_disconnect=on_disconnect,buffer=15.0,max=40.0))
+rtmp_audio = stereo(input.harbor("#{radio_name}_rtmp",id="rtmp_relay",port=9001,logfile="/tmp/liquidsoap_rtmp_relay_harbor.log",user="rtmp_source",password="pricemaster9876",on_disconnect=on_disconnect,buffer=15.0,max=40.0))
 
-# ingest rtmp from viz server
-
-# how do we get the key?!
-# live = input.rtmp(listen=false, "rtmp://localhost:1935/live/key")
-# live = input.rtmp(listen=false, "rtmp://vjstream.streampusher.com:1935/live/key")
-
-# rtmp = input.rtmp("rtmp://0.0.0.0:1935/live", listen=true)
-
-# live_dj := input.harbor(
-#   "liq_live_dj",
-#   port=9000,
-#   password="abc123"
-# )
-#
 def new_meta(m) =
   log("in new meta")
   log(string(m))
@@ -309,7 +294,6 @@ output.file(%mp3, current_dump_filename_getter, live_dj(), fallible=true, reopen
 
 # nginx-rtmp pushes the live RTMP stream here when a DJ is streaming with obs
 rtmp_relay = input.rtmp(listen=true, "rtmp://0.0.0.0:1936/live")
-rtmp_audio = stereo(rtmp_relay)
 
 radio_fallback = fallback(id="fallback",track_sensitive=false,
                  [rtmp_audio, live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
@@ -357,6 +341,14 @@ hls_audio_fallback = fallback(id="fallback",track_sensitive=false,
                              [live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
 
 single_video = video.testsrc.ffmpeg()
+
+single_video = video.add_image(width=200, height=200, x=10, y=10, file="df_logo_2019.png", single_video)
+
+single_video =   video.add_text.sdl(
+    font="./hinted-Debussy.woff",
+    "DATAFRUITS.FM",
+    single_video
+  )
 
 logo_fallback = source.mux.audio(single_video, audio=hls_audio_fallback)
 
