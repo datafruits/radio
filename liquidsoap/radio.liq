@@ -310,11 +310,10 @@ output.file(%mp3, current_dump_filename_getter, live_dj(), fallible=true, reopen
 # nginx-rtmp pushes the live RTMP stream here when a DJ is streaming with obs
 rtmp_relay = input.rtmp(listen=true, "rtmp://datafruits_viz:1936")
 # TODO uncommenting this causes type error
-# rtmp_audio = mksafe(stereo(source.tracks(rtmp_relay).audio))
+rtmp_audio = stereo(source.tracks(rtmp_relay).audio)
 
 source = fallback(id="fallback",track_sensitive=false,
-                  [live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
-#                 [rtmp_audio, live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
+                 [rtmp_audio, live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
 
 source.on_metadata(synchronous=false, pub_metadata)
 
@@ -359,9 +358,12 @@ output.icecast(%mp3,id="icecast",
 
 # HLS video output
 
+hls_audio_fallback = fallback(id="fallback",track_sensitive=false,
+                             [live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
+
 single_video = noise()
 
-logo_fallback = mux_audio(single_video, audio=source)
+logo_fallback = mux_audio(single_video, audio=hls_audio_fallback)
 
 # RTMP video takes priority; fall back to static logo + audio
 hls_source = fallback(id="hls_fallback", track_sensitive=false, [rtmp_relay, logo_fallback])
