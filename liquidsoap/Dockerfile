@@ -77,7 +77,12 @@ RUN liquidsoap --check radio.liq
 #RUN chown liquidsoap:liquidsoap /home/liquidsoap/tracks
 #RUN chown liquidsoap:liquidsoap /home/liquidsoap/recordings
 
+RUN usermod -u 1000 liquidsoap
+RUN groupmod -g 1000 liquidsoap
+
 USER liquidsoap
+
+RUN id
 
 EXPOSE 9000
 EXPOSE 9001

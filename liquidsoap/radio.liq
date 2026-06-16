@@ -12,7 +12,6 @@ set("request.deprecated_on_air_metadata", true)
 
 #set("server.telnet",true)
 set("server.socket",true)
-# set("server.socket.path","/tmp/datafruits/liquidsoap.sock")
 set("server.socket.path","/home/liquidsoap/tracks/liquidsoap.sock")
 
 set("harbor.bind_addrs",["0.0.0.0"])
@@ -295,6 +294,8 @@ output.file(%mp3, current_dump_filename_getter, live_dj(), fallible=true, reopen
 # nginx-rtmp pushes the live RTMP stream here when a DJ is streaming with obs
 rtmp_relay = input.rtmp(listen=true, "rtmp://0.0.0.0:1936/live")
 
+vj_relay = input.rtmp(listen=true, "rtmp://0.0.0.0:1936/vj")
+
 radio_fallback = fallback(id="fallback",track_sensitive=false,
                  [rtmp_audio, live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
 
@@ -353,7 +354,7 @@ single_video =   video.add_text.sdl(
 logo_fallback = source.mux.audio(single_video, audio=hls_audio_fallback)
 
 # RTMP video takes priority; fall back to static logo + audio
-hls_source = fallback(id="hls_fallback", track_sensitive=false, [rtmp_relay, mksafe(logo_fallback)])
+hls_source = fallback(id="hls_fallback", track_sensitive=false, [rtmp_relay, vj_relay, mksafe(logo_fallback)])
 
 hls_enc = %ffmpeg(
   format="mpegts",
