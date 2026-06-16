@@ -6,7 +6,7 @@ set("sandbox.tool","disabled")
 set("log.file",true)
 set("log.file.path","/var/log/liquidsoap.log")
 set("log.stdout",true)
-set("log.level", 5)
+set("log.level", 3)
 
 set("request.deprecated_on_air_metadata", true)
 
@@ -43,6 +43,7 @@ stop_dump_f = ref (fun () -> ())
 
 # live_dj = ref empty()
 live_dj = ref(source.fail())
+# rtmp_relay = ref(source.fail())
 # fallback_ref = ref(fallback([source.fail()]))
 
 def icy_update(v) =
@@ -85,7 +86,7 @@ def dj_dummy_stopped() =
   f()
 end
 
-def get_user(user,password) =
+def get_user(user, password) =
   if user == "source" then
     x = string.split(separator=';',password)
     list.nth(x,0,default="")
@@ -94,7 +95,7 @@ def get_user(user,password) =
   end
 end
 
-def get_password(user,password) =
+def get_password(user, password) =
   if user == "source" then
     x = string.split(separator=';',password)
     list.nth(x,1,default="")
@@ -104,10 +105,10 @@ def get_password(user,password) =
 end
 
 #auth function
-def dj_auth(params) =
+def dj_auth(req) =
   log("dj auth")
-  u = get_user(params.user,params.password)
-  p = get_password(params.user,params.password)
+  u = get_user(req.user, req.password)
+  p = get_password(req.user, req.password)
   ret = process.read.lines("./dj_auth.sh '#{u}' '#{p}' '#{radio_name}'")
   #ret has now the value of the live client (dj1,dj2, or djx), or "ERROR"/"unknown"
   ret = list.hd(default="",ret)
@@ -223,15 +224,12 @@ def on_disconnect() =
   log(ret)
 end
 
-# buffer breaks fallback?
 live_dj := stereo(input.harbor("#{radio_name}",id="live_dj",port=9000,auth=dj_auth,on_connect=on_connect,on_disconnect=on_disconnect,logfile="/tmp/liquidsoap_harbor.log",buffer=15.0,max=40.0))
 
-# live_dj := input.harbor(
-#   "liq_live_dj",
-#   port=9000,
-#   password="abc123"
-# )
-#
+# this source doesn't need on_connect handler, all recording/metadata is handled elsewhere
+# disconnect handler to clear metadata is necessary though
+rtmp_audio = stereo(input.harbor("#{radio_name}_rtmp",id="rtmp_relay",port=9001,logfile="/tmp/liquidsoap_rtmp_relay_harbor.log",user="rtmp_source",password="pricemaster9876",on_disconnect=on_disconnect,buffer=15.0,max=40.0))
+
 def new_meta(m) =
   log("in new meta")
   log(string(m))
@@ -293,13 +291,18 @@ end
 
 output.file(%mp3, current_dump_filename_getter, live_dj(), fallible=true, reopen_when=reopen_when, reopen_delay=0.0, append=true)
 
-source = fallback(id="fallback",track_sensitive=false,
-                 [live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
+# nginx-rtmp pushes the live RTMP stream here when a DJ is streaming with obs
+rtmp_relay = input.rtmp(listen=true, "rtmp://0.0.0.0:1936/live")
 
-source.on_metadata(synchronous=false, pub_metadata)
+vj_relay = input.rtmp(listen=true, "rtmp://0.0.0.0:1936/vj")
+
+radio_fallback = fallback(id="fallback",track_sensitive=false,
+                 [rtmp_audio, live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
+
+radio_fallback.on_metadata(synchronous=false, pub_metadata)
 
 def current_fallback_source(v) =
-  selected_source = "#{source.selected()}"
+  selected_source = "#{radio_fallback.selected()}"
   selected_source
 end
 
@@ -309,9 +312,9 @@ server.register("current_source", namespace="fallback",
                 current_fallback_source)
 
 def current_fallback_duration(v) =
-  duration = "#{source.duration()}"
-  elapsed = "#{source.elapsed()}"
-  remaining = "#{source.remaining()}"
+  duration = "#{radio_fallback.duration()}"
+  elapsed = "#{radio_fallback.elapsed()}"
+  remaining = "#{radio_fallback.remaining()}"
   "elapsed: #{elapsed} / duration: #{duration} / remaining: #{remaining}"
 end
 
@@ -320,19 +323,52 @@ server.register("duration", namespace="fallback",
                 usage="duration",
                 current_fallback_duration)
 
-# TODO unneeded ???
-# source.on_track(pub_metadata)
-# source = server.insert_metadata(id="fallback", source)
-
 output.icecast(%vorbis,id="icecast",
                mount="#{radio_name}.ogg",
                host=icecast_host, port=int_of_string(icecast_port), password="hackme",
                send_icy_metadata=true,description="",
                url="", encoding="UTF-8",
-               mksafe(buffer(source)))
+               mksafe(buffer(radio_fallback)))
 output.icecast(%mp3,id="icecast",
               mount="#{radio_name}.mp3",
               host=icecast_host, port=int_of_string(icecast_port), password="hackme",
               send_icy_metadata=true,description="",
               url="", encoding="UTF-8",
-              mksafe(buffer(source)))
+              mksafe(buffer(radio_fallback)))
+
+# HLS video output
+
+hls_audio_fallback = fallback(id="fallback",track_sensitive=false,
+                             [live_dj(),scheduled_shows,mksafe(id="backup_playlist_mksafe", backup_playlist)])
+
+single_video = video.testsrc.ffmpeg()
+
+single_video = video.add_image(width=200, height=200, x=10, y=10, file="df_logo_2019.png", single_video)
+
+single_video =   video.add_text.sdl(
+    font="./hinted-Debussy.woff",
+    "DATAFRUITS.FM",
+    single_video
+  )
+
+logo_fallback = source.mux.audio(single_video, audio=hls_audio_fallback)
+
+# RTMP video takes priority; fall back to static logo + audio
+hls_source = fallback(id="hls_fallback", track_sensitive=false, [rtmp_relay, vj_relay, mksafe(logo_fallback)])
+
+hls_enc = %ffmpeg(
+  format="mpegts",
+  %video(codec="libx264", x264opts="keyint=100:min-keyint=100"),
+  %audio(codec="aac", channels=2, ar=44100)
+)
+
+output.file.hls(
+  id="hls_output",
+  playlist="live.m3u8",
+  segment_duration=4.0,
+  segments=5,
+  segments_overhead=5,
+  "/home/liquidsoap/hls/",
+  [("live", hls_enc)],
+  hls_source
+)
